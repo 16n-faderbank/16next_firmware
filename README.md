@@ -78,3 +78,20 @@ At any point, the default config can be restored by sending sysex message TODOTO
 ### Internal LED
 
 There's an "internal" LED on the board, at GPIO22. This is visible through the slot of fader 1, or around the usb port. (It really should have a pinhole in the side, tbh). If `midiLed` is true in the controller config, this will flash on MIDI activity. If `powerLed` is true in the controller config, this will be on permanently.
+
+## Memory Map
+
+| Address | Format |            Description             |
+|---------|--------|------------------------------------|
+| 0       | 0/1    | LED on when powered                |
+| 1       | 0/1    | LED blink on MIDI data             |
+| 2       | 0/1    | Rotate controller outputs via 180º |
+| 3       | 0/1    | I2C Master/Follower                |
+| 4,5     | 0-127  | FADERMIN lsb/msb                   |
+| 6,7     | 0-127  | FADERMAX lsb/msb                   |
+| 8       | 0/1    | Soft MIDI thru (default 0)         |
+| 9-15    |        | Currently unused                   |
+| 16-31   | 0-15   | Channel for each control (USB)     |
+| 32-47   | 0-15   | Channel for each control (TRS)     |
+| 48-63   | 0-127  | CC for each control (USB)          |
+| 64-79   | 0-127  | CC for each control (TRS)          |
