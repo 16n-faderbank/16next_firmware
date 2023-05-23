@@ -10,7 +10,7 @@ pico_sdk_init()
 
 add_executable(16next
   16next.cpp
-  lib/HystFilter.cpp
+  lib/ResponsiveAnalogRead.cpp
   lib/spi_flash.cpp
   usb_descriptors.c
 )

@@ -15,7 +15,7 @@
 #include "tusb.h"
 
 #include "16next.h"
-#include "lib/HystFilter.h"
+#include "lib/ResponsiveAnalogRead.h"
 #include "lib/spi_flash.h"
 
 #define FIRMWARE_VERSION_MAJOR 0
@@ -95,7 +95,7 @@ int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to M
 int previousValues[16];
 int muxMask;
 
-HystFilter *analog[FADER_COUNT];  // array of filters to smooth analog read.
+ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog read.
 
 int main() {
   board_init();
@@ -159,9 +159,9 @@ int main() {
 
   // setup analog read buckets
   for (int i = 0; i < FADER_COUNT; i++) {
-    analog[i] = new HystFilter(0.8, 5);
-    // analog[i]->setActivityThreshold(32);
-    // analog[i]->enableEdgeSnap();
+    analog[i] = new ResponsiveAnalogRead(0, true, .0001);
+    analog[i]->setActivityThreshold(32);
+    analog[i]->enableEdgeSnap();
   }
 
   tusb_init();
@@ -380,13 +380,16 @@ void updateControls(bool force) {
     busy_wait_us(10); // wait for mux pins to swap
 
     uint16_t rawAdcValue = adc_read();
-    if (analog[i]->update(rawAdcValue) || force) {
+    analog[i]->update(rawAdcValue);
+
+    if (analog[i]->hasChanged() || force) {
       if(force) {
         // if we're being asked to update all our values, we _really_ would like a read, please.
         analog[i]->update(rawAdcValue);
       }
+
       // test the scaled version against the previous CC.
-      uint8_t outputValue = analog[i]->getValue();
+      uint8_t outputValue = analog[i]->getValue() >> 5;
       if ((outputValue != previousValues[i]) || force) {
         previousValues[i] = outputValue;
         uint8_t controllerIndex = i; // TODO is this right?

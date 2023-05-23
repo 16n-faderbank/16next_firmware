@@ -2,7 +2,7 @@
 
 ## TODO
 
-* port to RAR
+* test CV outs
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
 * enable TRS MIDI
@@ -14,6 +14,7 @@
 * update datastructure to reflect 16n config
 * start out by just making it hardcoded.
 * add proper serial number support
+* port to RAR
 
 ---
 
@@ -51,8 +52,7 @@ I got quite into using `gpio_put_masked` to update the four indicator LEDs statu
 `lib` contains:
 
 * an implementation of Bounce2 (used for our buttons)
-* an implementation of Responsive Analog Read (once used for faders)
-* an broader Hysteresis-Filter implementation, `HystFilter`, which is used to denoise faders.
+* an implementation of Responsive Analog Read 
 * `spi_flash` as supplied in the Pico SDK examples.
 
 ### Flash memory implementation
