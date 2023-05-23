@@ -83,8 +83,8 @@ uint8_t memoryMapLength = 80;
 uint8_t defaultMemoryMap[] = {
   0,1,0,0,0,0,0,0, // 0-7
   0,0,0,0,0,0,0,0, // 8-15
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 16-31
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 32-47
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
   32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
   32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
 };
@@ -277,7 +277,7 @@ void processSysexBuffer() {
   switch (sysexBuffer[4]) {
   case 0x1F:
     // 0x1F == tell me your 1nFo
-    // sendCurrentConfig(); TODO
+    sendCurrentConfig();
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
@@ -286,31 +286,33 @@ void processSysexBuffer() {
   }
 }
 
-// void sendCurrentConfig() {
-//   // current Data length = memory + 3 bytes for firmware version
-//   uint8_t configDataLength = 3 + memoryMapLength;
-//   uint8_t currentConfigData[configDataLength];
+void sendCurrentConfig() {
+  // current Data length = memory + 3 bytes for firmware version + 1 byte for device ID
+  uint8_t configDataLength = 4 + memoryMapLength;
+  uint8_t currentConfigData[configDataLength];
 
-//   // read 256 bytes from external flash
-//   flash_read(spi1, SPI_CS_PIN, target_addr, page_buf, FLASH_PAGE_SIZE);
+  // read 256 bytes from external flash
+  // flash_read(spi1, SPI_CS_PIN, target_addr, page_buf, FLASH_PAGE_SIZE);
 
-//   // build a message from the version number...
-//   currentConfigData[0] = FIRMWARE_VERSION_MAJOR;
-//   currentConfigData[1] = FIRMWARE_VERSION_MINOR;
-//   currentConfigData[2] = FIRMWARE_VERSION_POINT;
+  // build a message from the version number...
+  currentConfigData[0] = 0x04; // 0x04 == 16next device id
+  currentConfigData[1] = FIRMWARE_VERSION_MAJOR;
+  currentConfigData[2] = FIRMWARE_VERSION_MINOR;
+  currentConfigData[3] = FIRMWARE_VERSION_POINT;
 
-//   // ... and the first 48 bytes of the external data
-//   for (uint8_t i = 0; i < memoryMapLength; i++) {
-//     currentConfigData[i+3] = page_buf[i];
-//   }
+  // ... and the first 48 bytes of the external data
+  for (uint8_t i = 0; i < memoryMapLength; i++) {
+    // TODO: remove default Memory Map, read from memory
+    currentConfigData[i+4] = defaultMemoryMap[i];
+  }
 
-//   // send as sysex; 0x0F == c0nFig
-//   sendByteArrayAsSysex(0x0F, currentConfigData, configDataLength);
+  // send as sysex; 0x0F == c0nFig
+  sendByteArrayAsSysex(0x0F, currentConfigData, configDataLength);
 
-//   // send the current state of the faders in 1s time.
-//   shouldSendControlUpdate = true;
-//   sendForcedUpdateAt = make_timeout_time_ms(1000);
-// }
+  // send the current state of the faders in 1s time.
+  shouldSendControlUpdate = true;
+  sendForcedUpdateAt = make_timeout_time_ms(100);
+}
 
 // void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength) {
 //   // OK:
@@ -322,54 +324,49 @@ void processSysexBuffer() {
 //     newMemoryMap[i] = incomingSysex[i + 5];
 //   }
 
-//   // 2) store that into memory...
+  // 2) store that into memory...
 //   saveConfig(newMemoryMap);
 
 //   // 3) and now read that memory, loading it as data
 //   applyConfig(newMemoryMap);
 // }
 
-// void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
-//                           uint8_t byteArrayLength) {
-//   uint8_t outputMessageLength =
-//       1 + 3 + 1 + byteArrayLength + 1; // start/mfg/message/data/end
-//   uint8_t outputMessage[outputMessageLength];
-//   outputMessage[0] = 0xF0; // start Sysex
-//   outputMessage[1] = 0x7D; // MFG byte 1
-//   outputMessage[2] = 0x00; // MFG byte 2
-//   outputMessage[3] = 0x00; // MFG byte 3
-//   outputMessage[4] = messageId;
-//   for (uint8_t i = 0; i < byteArrayLength; i++) {
-//     uint8_t el = byteArray[i];
-//     outputMessage[i + 5] = el;
-//   }
-//   outputMessage[outputMessageLength - 1] = 0xF7; // end Sysex
+void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
+                          uint8_t byteArrayLength) {
+  uint8_t outputMessageLength =
+      1 + 3 + 1 + byteArrayLength + 1; // start/mfg/message/data/end
+  uint8_t outputMessage[outputMessageLength];
+  outputMessage[0] = 0xF0; // start Sysex
+  outputMessage[1] = 0x7D; // MFG byte 1
+  outputMessage[2] = 0x00; // MFG byte 2
+  outputMessage[3] = 0x00; // MFG byte 3
+  outputMessage[4] = messageId;
+  for (uint8_t i = 0; i < byteArrayLength; i++) {
+    uint8_t el = byteArray[i];
+    outputMessage[i + 5] = el;
+  }
+  outputMessage[outputMessageLength - 1] = 0xF7; // end Sysex
 
-//   // how many chunks of 16 bytes is the message?
-//   uint8_t chunks = (outputMessageLength / 16) + 1;
+  // how many chunks of 16 bytes is the message?
+  uint8_t chunks = (outputMessageLength / 16) + 1;
 
-//   // for each chunk
-//   for (uint8_t chunk = 0; chunk < chunks; chunk++) {
-//     // offset within outputMessage
-//     uint8_t offset = chunk * 16;
+  // for each chunk
+  for (uint8_t chunk = 0; chunk < chunks; chunk++) {
+    // offset within outputMessage
+    uint8_t offset = chunk * 16;
 
-//     if (chunk + 1 == chunks) {
-//       // we're in the final chunk so:
-//       uint8_t chunkLength = outputMessageLength % 16;
-//       uint8_t tempBuf[chunkLength];
-//       for (uint8_t i = 0; i < chunkLength; i++) {
-//         tempBuf[i] = outputMessage[offset + i];
-//       }
-//       tud_midi_stream_write(0, tempBuf, chunkLength);
-//     } else {
-//       uint8_t tempBuf[16];
-//       for (uint8_t i = 0; i < 16; i++) {
-//         tempBuf[i] = outputMessage[offset + i];
-//       }
-//       tud_midi_stream_write(0, tempBuf, 16);
-//     }
-//   }
-// }
+    uint8_t chunkLength = 16;
+    uint8_t tempBuf[16];
+    if (chunk + 1 == chunks) {
+      // we're in the final chunk so:
+      chunkLength = outputMessageLength % 16;
+    }
+    for (uint8_t i = 0; i < chunkLength; i++) {
+      tempBuf[i] = outputMessage[offset + i];
+    }
+    tud_midi_stream_write(0, tempBuf, chunkLength);
+  }
+}
 
 void updateControls(bool force) {
   if(force) {

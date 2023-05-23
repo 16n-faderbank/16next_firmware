@@ -2,7 +2,9 @@
 
 ## TODO
 
+* get tud_midi_write sending more than 64 bytes of data.
 * test CV outs
+* get editor working
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
 * enable TRS MIDI
