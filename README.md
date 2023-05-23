@@ -2,9 +2,10 @@
 
 ## TODO
 
-* get tud_midi_write sending more than 64 bytes of data.
+* store and load data in memory
+* receive sysex data in
 * test CV outs
-* get editor working
+* find MIDI jack and MIDI switch in parts bin
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
 * enable TRS MIDI
@@ -19,6 +20,7 @@
 * port to RAR
 * enable midiblinky
 * enable powerled
+* sysex sending config.
 
 ---
 
