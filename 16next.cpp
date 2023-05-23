@@ -141,6 +141,8 @@ int main() {
     controller.trsCCs[i] = 32+i;
   }
   
+  midiBlinkEnabled = controller.midiLed;
+
   // init ADC0 on GPIO26
   adc_init();
   adc_gpio_init(ADC_PIN);
