@@ -15,6 +15,8 @@
 * start out by just making it hardcoded.
 * add proper serial number support
 * port to RAR
+* enable midiblinky
+* enable powerled
 
 ---
 

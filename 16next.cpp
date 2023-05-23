@@ -180,7 +180,11 @@ int main() {
     tud_task();
     midi_read_task();
 
-    gpio_put(INTERNAL_LED_PIN, midiBlinkEnabled && midiActivity);
+    if(controller.powerLed)   {
+      gpio_put(INTERNAL_LED_PIN, true);
+    } else {
+      gpio_put(INTERNAL_LED_PIN, midiBlinkEnabled && midiActivity);
+    }
 
     if(absolute_time_diff_us(midiActivityLightOffAt, get_absolute_time()) > 0) {
       midiActivity = false;
