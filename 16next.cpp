@@ -27,7 +27,8 @@
 #define ADC_PIN 26
 #define INTERNAL_LED_PIN 22
 
-#define FADER_COUNT 16
+// 2 for now, we're being cheapskates
+#define FADER_COUNT 2
 
 // we're using SPI1, which is here:
 // #define SPI1_SCK_PIN 10
@@ -39,7 +40,6 @@
 
 #define MIDI_BLINK_DURATION 5000 // us
 
-// uint8_t currentBank = 0;
 uint8_t page_buf[FLASH_PAGE_SIZE];
 const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
@@ -65,23 +65,34 @@ uint8_t sysexOffset = 0; // where in the buffer we start writing to.
 #define MIDI_INPUT_BUFFER 64
 
 // default memorymap
-// | Address | Format | Description                        |
-// | ------- | ------ | ---------------------------------- |
-// | 0       | 0-3    | Currently selected bank            |
-// | 1       | 0-3    | Maximum number of banks            |
+// | Address | Format |            Description             |
+// |---------|--------|------------------------------------|
+// | 0       | 0/1    | LED on when powered                |
+// | 1       | 0/1    | LED blink on MIDI data             |
 // | 2       | 0/1    | Rotate controller outputs via 180º |
-// | 3       | 0-15   | MIDI channel for controller        |
-// | 16-47   | 0-127  | CC for each control (USB)          |
-uint8_t memoryMapLength = 48;
+// | 3       | 0/1    | I2C Master/Follower                |
+// | 4,5     | 0-127  | FADERMIN lsb/msb                   |
+// | 6,7     | 0-127  | FADERMAX lsb/msb                   |
+// | 8       | 0/1    | Soft MIDI thru (default 0)         |
+// | 9-15    |        | Currently unused                   |
+// | 16-31   | 0-15   | Channel for each control (USB)     |
+// | 32-47   | 0-15   | Channel for each control (TRS)     |
+// | 48-63   | 0-127  | CC for each control (USB)          |
+// | 64-79   | 0-127  | CC for each control (TRS)          |
+uint8_t memoryMapLength = 80;
 uint8_t defaultMemoryMap[] = {
-    0,  3,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1,  11, 74, 75, 2,   3,   9,   18,  22,  23,  24,  25,  77,  78,  79,  80,
-    16, 17, 18, 21, 3,   24,  73,  72,  32,  33,  34,  35,  36,  37,  38,  39};
+  0,1,0,0,0,0,0,0, // 0-7
+  0,0,0,0,0,0,0,0, // 8-15
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 16-31
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 32-47
+  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
+  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
+};
 
 int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to Mux positions, ie,
                                   // fader 6 is on mux input 0,
                                   // fader 4 is on mux input 1
-int previousValues[8];
+int previousValues[16];
 int muxMask;
 
 HystFilter *analog[FADER_COUNT];  // array of filters to smooth analog read.
@@ -111,6 +122,8 @@ int main() {
   controller.midiLed = true;
   controller.powerLed = false;
   controller.rotated = false;
+  controller.i2cFollower = false;
+  controller.midiThru = false;
   for (uint8_t i = 0; i < FADER_COUNT; i++)
   {
     controller.usbMidiChannels[i] = 0;
@@ -118,6 +131,14 @@ int main() {
   for (uint8_t i = 0; i < FADER_COUNT; i++)
   {
     controller.usbCCs[i] = 32+i;
+  }
+  for (uint8_t i = 0; i < FADER_COUNT; i++)
+  {
+    controller.trsMidiChannel[i] = 0;
+  }
+  for (uint8_t i = 0; i < FADER_COUNT; i++)
+  {
+    controller.trsCCs[i] = 32+i;
   }
   
   // init ADC0 on GPIO26

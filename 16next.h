@@ -7,13 +7,17 @@
  * Data structure containing all elements of controller config.
 */
 struct ControllerConfig {
-  bool rotated;
   bool powerLed;
   bool midiLed;
+  bool rotated;
+  bool i2cFollower;
+  uint32_t faderMin;
+  uint32_t faderMax;
+  bool midiThru;
   uint8_t usbMidiChannels[16];
   uint8_t usbCCs[16];
-  // uint8_t trsMidiChannel[16];
-  // uint8_t trsCCs[16];
+  uint8_t trsMidiChannel[16];
+  uint8_t trsCCs[16];
 };
 
 /*
