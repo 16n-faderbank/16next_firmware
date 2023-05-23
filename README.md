@@ -2,14 +2,18 @@
 
 ## TODO
 
-* update datastructure to reflect 16n config
-* start out by just making it hardcoded.
+* port to RAR
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
-* fixup memory map
 * enable TRS MIDI
 * enable TRS SPI1
 
+## DONE
+
+* fixup memory map
+* update datastructure to reflect 16n config
+* start out by just making it hardcoded.
+* add proper serial number support
 
 ---
 

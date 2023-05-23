@@ -24,6 +24,7 @@
  */
 
 #include "tusb.h"
+#include "pico/unique_id.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -59,10 +60,15 @@ tusb_desc_device_t const desc_device =
     .bNumConfigurations = 0x01
 };
 
+char boardId[17];
+char* boardIdPointer = boardId;
+
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
 uint8_t const * tud_descriptor_device_cb(void)
 {
+  // load unique ID of flash RAM into memory
+  pico_get_unique_board_id_string(boardIdPointer,17);
   return (uint8_t const *) &desc_device;
 }
 
@@ -132,8 +138,8 @@ char const* string_desc_arr [] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
   "Oxion",    // 1: Manufacturer
-  "16next",           // 2: Product
-  "123456",           // 3: TODOTODO Serials, should use chip ID
+  "16next",   // 2: Product
+  boardId     // 3: Serial number derived from ID of flash RAM
 };
 
 static uint16_t _desc_str[32];

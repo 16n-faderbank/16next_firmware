@@ -21,4 +21,13 @@ pico_enable_stdio_uart(16next 1)
 target_include_directories(16next PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 pico_add_extra_outputs(16next)
-target_link_libraries(16next PRIVATE pico_stdlib hardware_adc hardware_i2c hardware_spi tinyusb_device tinyusb_board)
+target_link_libraries(16next
+  PRIVATE
+  pico_stdlib
+  pico_unique_id
+  hardware_adc
+  hardware_i2c
+  hardware_spi
+  tinyusb_device
+  tinyusb_board
+)
