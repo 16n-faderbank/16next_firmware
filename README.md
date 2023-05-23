@@ -8,7 +8,7 @@
 * enable TRS MIDI
 * enable TRS SPI1
 
-## DONE
+## DONE
 
 * fixup memory map
 * update datastructure to reflect 16n config
