@@ -16,11 +16,11 @@
 
 #include "16next.h"
 #include "lib/ResponsiveAnalogRead.h"
-#include "lib/spi_flash.h"
+#include "lib/eeprom.h"
 
-#define FIRMWARE_VERSION_MAJOR 0
+#define FIRMWARE_VERSION_MAJOR 3
 #define FIRMWARE_VERSION_MINOR 0
-#define FIRMWARE_VERSION_POINT 1 
+#define FIRMWARE_VERSION_POINT 0 
 
 #define FIRST_MUX_PIN 18
 #define MUX_PIN_COUNT 4 
@@ -30,31 +30,19 @@
 // 2 for now, we're being cheapskates
 #define FADER_COUNT 2
 
-// we're using SPI1, which is here:
-// #define SPI1_SCK_PIN 10
-// #define SPI1_TX_PIN 11
-// #define SPI1_RX_PIN 12
-// #define SPI1_CS_PIN 13
+EEPROM eeprom;
 
 #define CONTROL_POLL_TIMEOUT 10 // ms
 
 #define MIDI_BLINK_DURATION 5000 // us
 
-uint8_t page_buf[FLASH_PAGE_SIZE];
 const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
 absolute_time_t midiActivityLightOffAt;
 bool midiActivity = false;
-bool midiBlinkEnabled = false;
 
 bool shouldSendControlUpdate = false;
 absolute_time_t sendForcedUpdateAt;
-
-// bool controllerRotated = false;
-// uint8_t enabledBanks = 3;
-// uint8_t midiChannel = 0;
-// uint8_t ccs[] = {1,  11, 74, 75, 2, 3,  9,  18, 22, 23, 24, 25, 77, 78, 79, 80,
-                //  16, 17, 18, 21, 3, 24, 73, 72, 32, 33, 34, 35, 36, 37, 38, 39};
 
 ControllerConfig controller; // struct to hold controller config
 
@@ -75,8 +63,8 @@ uint8_t sysexOffset = 0; // where in the buffer we start writing to.
 // | 6,7     | 0-127  | FADERMAX lsb/msb                   |
 // | 8       | 0/1    | Soft MIDI thru (default 0)         |
 // | 9-15    |        | Currently unused                   |
-// | 16-31   | 0-15   | Channel for each control (USB)     |
-// | 32-47   | 0-15   | Channel for each control (TRS)     |
+// | 16-31   | 1-16   | Channel for each control (USB)     |
+// | 32-47   | 1-16   | Channel for each control (TRS)     |
 // | 48-63   | 0-127  | CC for each control (USB)          |
 // | 64-79   | 0-127  | CC for each control (TRS)          |
 uint8_t memoryMapLength = 80;
@@ -102,46 +90,19 @@ int main() {
 
   stdio_init_all();
 
-  // Enable SPI 1 at 1 MHz and connect to GPIOs
-  // spi_init(spi1, 1000 * 1000);
-  // gpio_set_function(SPI_RX_PIN, GPIO_FUNC_SPI);
-  // gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
-  // gpio_set_function(SPI_TX_PIN, GPIO_FUNC_SPI);
+  // setup EEPROM on I2C0, on GPIO 11/12
+  // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a Pico)
+  i2c_init(i2c0, 100 * 1000);
+  gpio_set_function(8, GPIO_FUNC_I2C);
+  gpio_set_function(9, GPIO_FUNC_I2C);
+  gpio_pull_up(8);
+  gpio_pull_up(9);
+  // Make the I2C pins available to picotool
+  bi_decl(bi_2pins_with_func(8, 9, GPIO_FUNC_I2C));
 
-  // Make the SPI pins available to picotool
-  // bi_decl(bi_3pins_with_func(SPI_RX_PIN, SPI_TX_PIN, SPI_SCK_PIN, GPIO_FUNC_SPI));
+  eeprom.begin();
 
-  // Chip select is active-low, so we'll initialise it to a driven-high state
-  // gpio_init(SPI_CS_PIN);
-  // gpio_put(SPI_CS_PIN, 1);
-  // gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
-  // Make the CS pin available to picotool
-  // bi_decl(bi_1pin_with_name(SPI_CS_PIN, "SPI CS"));
-
-  // setup default controller config, before we have memory working
-  controller.midiLed = true;
-  controller.powerLed = false;
-  controller.rotated = false;
-  controller.i2cFollower = false;
-  controller.midiThru = false;
-  for (uint8_t i = 0; i < FADER_COUNT; i++)
-  {
-    controller.usbMidiChannels[i] = 0;
-  }
-  for (uint8_t i = 0; i < FADER_COUNT; i++)
-  {
-    controller.usbCCs[i] = 32+i;
-  }
-  for (uint8_t i = 0; i < FADER_COUNT; i++)
-  {
-    controller.trsMidiChannel[i] = 0;
-  }
-  for (uint8_t i = 0; i < FADER_COUNT; i++)
-  {
-    controller.trsCCs[i] = 32+i;
-  }
-  
-  midiBlinkEnabled = controller.midiLed;
+  loadConfig(true); // load config from eeprom; write default config TO eeprom if byte 1 is 0xFF
 
   // init ADC0 on GPIO26
   adc_init();
@@ -170,7 +131,6 @@ int main() {
 
   gpio_put(INTERNAL_LED_PIN, 0);
 
-  // loadConfig(true); // write default config if byte 1 is 0xFF
 
   // end setup
 
@@ -183,7 +143,7 @@ int main() {
     if(controller.powerLed)   {
       gpio_put(INTERNAL_LED_PIN, true);
     } else {
-      gpio_put(INTERNAL_LED_PIN, midiBlinkEnabled && midiActivity);
+      gpio_put(INTERNAL_LED_PIN, controller.midiLed && midiActivity);
     }
 
     if(absolute_time_diff_us(midiActivityLightOffAt, get_absolute_time()) > 0) {
@@ -281,7 +241,12 @@ void processSysexBuffer() {
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
-    // updateConfig(sysexBuffer, 128); TODO
+    updateConfig(sysexBuffer, 128);
+    break;
+  case 0x1A:
+    // 0x1A == initi1Alize to factory defaults
+    setDefaultConfig();
+    loadConfig();
     break;
   }
 }
@@ -291,8 +256,10 @@ void sendCurrentConfig() {
   uint8_t configDataLength = 4 + memoryMapLength;
   uint8_t currentConfigData[configDataLength];
 
-  // read 256 bytes from external flash
+  // read 80 bytes from external eeprom
   // flash_read(spi1, SPI_CS_PIN, target_addr, page_buf, FLASH_PAGE_SIZE);
+  uint8_t buf[80];
+  eeprom.readArray(0,buf,80);
 
   // build a message from the version number...
   currentConfigData[0] = 0x04; // 0x04 == 16next device id
@@ -300,10 +267,10 @@ void sendCurrentConfig() {
   currentConfigData[2] = FIRMWARE_VERSION_MINOR;
   currentConfigData[3] = FIRMWARE_VERSION_POINT;
 
-  // ... and the first 48 bytes of the external data
+  // ... and the first 80 bytes of the external data
   for (uint8_t i = 0; i < memoryMapLength; i++) {
     // TODO: remove default Memory Map, read from memory
-    currentConfigData[i+4] = defaultMemoryMap[i];
+    currentConfigData[i+4] = buf[i];
   }
 
   // send as sysex; 0x0F == c0nFig
@@ -314,22 +281,25 @@ void sendCurrentConfig() {
   sendForcedUpdateAt = make_timeout_time_ms(100);
 }
 
-// void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength) {
-//   // OK:
-//   uint8_t newMemoryMap[memoryMapLength];
+void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength) {
+  // OK:
+  uint8_t newMemoryMap[memoryMapLength];
 
-//   // 1) read the data that's just come in, and extract the 48 bytes of memory
-//   // to a variable we offset by five to strip: SYSEX_START,MFG0,MFG1,MFG2,MSG
-//   for (uint8_t i = 0; i < memoryMapLength; i++) {
-//     newMemoryMap[i] = incomingSysex[i + 5];
-//   }
+  // 1) read the data that's just come in, and extract the 80 bytes of memory
+  // to a variable we offset by five to strip: SYSEX_START,MFG0,MFG1,MFG2,MSG
+  // and then also to strip
+  // * device ID
+  // * firmware MAJ/Min/POINT
+  for (uint8_t i = 0; i < memoryMapLength; i++) {
+    newMemoryMap[i] = incomingSysex[i + 9];
+  }
 
   // 2) store that into memory...
-//   saveConfig(newMemoryMap);
+  saveConfig(newMemoryMap);
 
-//   // 3) and now read that memory, loading it as data
-//   applyConfig(newMemoryMap);
-// }
+  // 3) and now read that memory, loading it as data
+  applyConfig(newMemoryMap);
+}
 
 void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
                           uint8_t byteArrayLength) {
@@ -401,8 +371,8 @@ void updateControls(bool force) {
           outputValue = 127-outputValue;
         }
 
-        // Send CC on channel 0 for appropriate channel
-        uint8_t cc[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex]), controller.usbCCs[controllerIndex],
+        // Send CC on appropriate channel
+        uint8_t cc[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex]-1), controller.usbCCs[controllerIndex],
                          outputValue};
         uint8_t cable_num = 0;
         tud_midi_stream_write(cable_num, cc, 3);
@@ -414,51 +384,54 @@ void updateControls(bool force) {
   }
 }
 
-// void loadConfig(bool setDefault) {
-//   // read 256 bytes from external flash
-//   flash_read(spi1, SPI_CS_PIN, target_addr, page_buf, FLASH_PAGE_SIZE);
-//   // if the 2nd byte is unwritten, that means we should write the default
-//   // settings to flash
-//   if (setDefault && (page_buf[1] == 0xFF)) {
-//     setDefaultConfig();
-//     tripleBlink();
-//     loadConfig(); // call yourself again, and default to read + apply
-//   } else {
-//     applyConfig(page_buf);
-//   }
-// }
+void loadConfig(bool setDefault) {
+  // read 80 bytes from EEPROM
+  uint8_t buf[memoryMapLength];
+  eeprom.readArray(0,buf,memoryMapLength);
+  // if the 2nd byte is unwritten, that means we should write the default
+  // settings to flash
+  if (setDefault && (buf[1] == 0xFF)) {
+    setDefaultConfig();
+    sleep_us(500);
+    loadConfig(); // call yourself again, and default to read + apply
+  } else {
+    applyConfig(buf);
+  }
+}
 
-// void applyConfig(uint8_t *conf) {
-//   // take the config in a buffer and apply it to the device
-//   // this means you could load from RAM or just go straight from sysex.
-//   controller.currentBank = conf[0];
-//   controller.enabledBanks = conf[1];
-//   controller.rotated = conf[2];
-//   controller.midiChannel = conf[3];
+void applyConfig(uint8_t *conf) {
+  // take the config in a buffer and apply it to the device
+  // this means you could load from RAM or just go straight from sysex.
 
-//   // load CCs from buffer
-//   for (int i = 0; i < 32; i++) {
-//     controller.ccs[i] = conf[i + 16];
-//   }
-// }
+  controller.powerLed = conf[0];
+  controller.midiLed = conf[1];
+  controller.rotated = conf[2];
+  controller.i2cFollower = conf[3];
+  controller.midiThru = conf[8];
 
-// void saveConfig(uint8_t *config) {
-//   // erase the whole sector
-//   flash_sector_erase(spi1, SPI_CS_PIN, target_addr);
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    controller.usbMidiChannels[i] = conf[16+i];
+  }
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    controller.trsMidiChannel[i] = conf[32+i];
+  }
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    controller.usbCCs[i] = conf[48+i];
+  }
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    controller.trsCCs[i] = conf[64+i];
+  }
+}
 
-//   // prepare the page buffer
-//   for (int i = 0; i < FLASH_PAGE_SIZE; ++i) {
-//     if (i < memoryMapLength) {
-//       // set first configLength bytes to config
-//       page_buf[i] = config[i];
-//     } else {
-//       // and set the rest to 255
-//       page_buf[i] = 0xFF;
-//     }
-//   }
+void saveConfig(uint8_t *config) {
+  eeprom.writeArray(0,config,memoryMapLength);
+}
 
-//   // write the page buffer
-//   flash_page_program(spi1, SPI_CS_PIN, target_addr, page_buf);
-// }
+void setDefaultConfig() {
+  saveConfig(defaultMemoryMap);
+}
 
-// void setDefaultConfig() { saveConfig(defaultMemoryMap); }

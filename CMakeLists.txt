@@ -10,8 +10,8 @@ pico_sdk_init()
 
 add_executable(16next
   16next.cpp
+  lib/eeprom.cpp
   lib/ResponsiveAnalogRead.cpp
-  lib/spi_flash.cpp
   usb_descriptors.c
 )
 
@@ -27,7 +27,6 @@ target_link_libraries(16next
   pico_unique_id
   hardware_adc
   hardware_i2c
-  hardware_spi
   tinyusb_device
   tinyusb_board
 )

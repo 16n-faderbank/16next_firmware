@@ -2,14 +2,9 @@
 
 ## TODO
 
-* store and load data in memory
-* receive sysex data in
-* test CV outs
-* find MIDI jack and MIDI switch in parts bin
-* enable SPI0 EEPROM on right pins
-* connect to SPI0 EEPROM
 * enable TRS MIDI
 * enable TRS SPI1
+* do EEPROM per-page writes...
 
 ## DONE
 
@@ -21,6 +16,12 @@
 * enable midiblinky
 * enable powerled
 * sysex sending config.
+* store and load data in memory
+* receive sysex data in
+* test CV outs
+* find MIDI jack and MIDI switch in parts bin
+* enable SPI0 EEPROM on right pins
+* connect to SPI0 EEPROM
 
 ---
 
