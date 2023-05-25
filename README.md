@@ -4,7 +4,6 @@
 
 * enable TRS MIDI
 * enable TRS SPI1
-* do EEPROM per-page writes...
 
 ## DONE
 
@@ -22,6 +21,7 @@
 * find MIDI jack and MIDI switch in parts bin
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
+* do EEPROM per-page writes...
 
 ---
 

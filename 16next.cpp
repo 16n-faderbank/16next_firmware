@@ -257,9 +257,8 @@ void sendCurrentConfig() {
   uint8_t currentConfigData[configDataLength];
 
   // read 80 bytes from external eeprom
-  // flash_read(spi1, SPI_CS_PIN, target_addr, page_buf, FLASH_PAGE_SIZE);
   uint8_t buf[80];
-  eeprom.readArray(0,buf,80);
+  eeprom.read(0,buf,80);
 
   // build a message from the version number...
   currentConfigData[0] = 0x04; // 0x04 == 16next device id
@@ -387,7 +386,7 @@ void updateControls(bool force) {
 void loadConfig(bool setDefault) {
   // read 80 bytes from EEPROM
   uint8_t buf[memoryMapLength];
-  eeprom.readArray(0,buf,memoryMapLength);
+  eeprom.read(0,buf,memoryMapLength);
   // if the 2nd byte is unwritten, that means we should write the default
   // settings to flash
   if (setDefault && (buf[1] == 0xFF)) {
@@ -428,7 +427,7 @@ void applyConfig(uint8_t *conf) {
 }
 
 void saveConfig(uint8_t *config) {
-  eeprom.writeArray(0,config,memoryMapLength);
+  eeprom.write(0,config,memoryMapLength);
 }
 
 void setDefaultConfig() {
