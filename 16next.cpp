@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include "bsp/board.h"
+#include "midi_uart_lib.h"
 #include "tusb.h"
 
 #include "16next.h"
@@ -26,6 +27,21 @@
 #define MUX_PIN_COUNT 4 
 #define ADC_PIN 26
 #define INTERNAL_LED_PIN 22
+
+// UART selection Pin mapping. You can move these for your design if you want to
+// Make sure all these values are consistent with your choice of midi_uart
+// The default is to use UART 1, but you are free to use UART 0 if you make
+// the changes in the CMakeLists.txt file or in your environment. Note
+// that if you use UART0, then serial port debug will not be enabled
+#ifndef MIDI_UART_NUM
+#define MIDI_UART_NUM 1
+#endif
+#ifndef MIDI_UART_TX_GPIO
+#define MIDI_UART_TX_GPIO 4
+#endif
+#ifndef MIDI_UART_RX_GPIO
+#define MIDI_UART_RX_GPIO 5
+#endif
 
 // 2 for now, we're being cheapskates
 #define FADER_COUNT 2
@@ -85,10 +101,16 @@ int muxMask;
 
 ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog read.
 
+static void *midi_uart_instance;
+
 int main() {
   board_init();
 
   stdio_init_all();
+
+  bi_decl(bi_1pin_with_name(INTERNAL_LED_PIN, "On-board LED"));
+  bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
+
 
   // setup EEPROM on I2C0, on GPIO 11/12
   // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a Pico)
@@ -119,6 +141,10 @@ int main() {
   // setup internal led
   gpio_init(INTERNAL_LED_PIN);
   gpio_set_dir(INTERNAL_LED_PIN, GPIO_OUT);
+
+  // setup TRS MIDI
+  midi_uart_instance = midi_uart_configure(MIDI_UART_NUM, MIDI_UART_TX_GPIO, MIDI_UART_RX_GPIO);
+
 
   // setup analog read buckets
   for (int i = 0; i < FADER_COUNT; i++) {
@@ -370,11 +396,16 @@ void updateControls(bool force) {
           outputValue = 127-outputValue;
         }
 
-        // Send CC on appropriate channel
+        // Send CC on appropriate USB channel
         uint8_t cc[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex]-1), controller.usbCCs[controllerIndex],
                          outputValue};
         uint8_t cable_num = 0;
         tud_midi_stream_write(cable_num, cc, 3);
+
+        // Send CC on appropriate TRS channel
+        uint8_t trs_cc[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex]-1), controller.trsCCs[controllerIndex], outputValue};
+        // tud_midi_stream_write(cable_num, cc, 3);
+        midi_uart_write_tx_buffer(midi_uart_instance,trs_cc,3);
 
         midiActivity = true;
         midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
@@ -414,7 +445,7 @@ void applyConfig(uint8_t *conf) {
   }
   for (uint8_t i = 0; i < 16; i++)
   {
-    controller.trsMidiChannel[i] = conf[32+i];
+    controller.trsMidiChannels[i] = conf[32+i];
   }
   for (uint8_t i = 0; i < 16; i++)
   {

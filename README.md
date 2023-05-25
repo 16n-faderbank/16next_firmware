@@ -23,6 +23,15 @@
 * connect to SPI0 EEPROM
 * do EEPROM per-page writes...
 
+
+## TRS MIDI Notes
+
+You'll need to do 
+
+`git submodule update --recursive`
+
+to pull in necessary submodules. We're using `midi_uart_lib` for TRS MIDI: https://github.com/rppicomidi/midi_uart_lib
+
 ---
 
 16next is a controller for electronic music. It is 16 faders that manifest as:

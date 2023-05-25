@@ -16,7 +16,7 @@ struct ControllerConfig {
   bool midiThru;
   uint8_t usbMidiChannels[16];
   uint8_t usbCCs[16];
-  uint8_t trsMidiChannel[16];
+  uint8_t trsMidiChannels[16];
   uint8_t trsCCs[16];
 };
 

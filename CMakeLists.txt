@@ -1,24 +1,57 @@
 cmake_minimum_required(VERSION 3.13)
 
+set(target_proj 16next)
+
 include(pico_sdk_import.cmake)
 
-project(16next C CXX ASM)
+project(${target_proj} C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
 
-add_executable(16next
+add_executable(${target_proj}
   16next.cpp
   lib/eeprom.cpp
   lib/ResponsiveAnalogRead.cpp
   usb_descriptors.c
 )
 
-pico_enable_stdio_usb(16next 0)
-pico_enable_stdio_uart(16next 1)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib/midi_uart_lib)
 
-target_include_directories(16next PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+# begin uart config
+if(DEFINED ENV{MIDI_UART_NUM})
+    set(MIDI_UART_NUM $ENV{MIDI_UART_NUM})
+endif()
+if(DEFINED ENV{MIDI_UART_TX_GPIO})
+    set(MIDI_UART_TX_GPIO $ENV{MIDI_UART_TX_GPIO})
+endif()
+if(DEFINED ENV{MIDI_UART_RX_GPIO})
+    set(MIDI_UART_RX_GPIO $ENV{MIDI_UART_RX_GPIO})
+endif()
+if (DEFINED MIDI_UART_NUM)
+    if (${MIDI_UART_NUM} EQUAL 1)
+        # MIDI is UART 1, so can enable UART 0 debugging
+        pico_enable_stdio_uart(${target_proj} 1)
+        if(DEFINED MIDI_UART_TX_GPIO AND DEFINED MIDI_UART_RX_GPIO)
+            target_compile_options(${target_proj} PRIVATE -DMIDI_UART_NUM=${MIDI_UART_NUM} -DMIDI_UART_TX_GPIO=${MIDI_UART_TX_GPIO} -DMIDI_UART_RX_GPIO=${MIDI_UART_RX_GPIO})
+        endif()
+    elseif(NOT ${MIDI_UART_NUM} EQUAL 0)
+        message(FATAL_ERROR "Legal values for MIDI_UART_NUM are 0 or 1, CMake will exit." )
+    elseif(NOT DEFINED MIDI_UART_TX_GPIO OR NOT DEFINED MIDI_UART_RX_GPIO)
+        message(FATAL_ERROR "You must define MIDI_UART_TX_GPIO and MIDI_UART_RX_GPIO if you define MIDI_UART_NUM 0, CMake will exit." )
+    else()
+        message("UART debugging is disabled if you use UART 0 for MIDI")
+        pico_enable_stdio_uart(${target_proj} 0)
+        target_compile_options(${target_proj} PRIVATE -DMIDI_UART_NUM=${MIDI_UART_NUM} -DMIDI_UART_TX_GPIO=${MIDI_UART_TX_GPIO} -DMIDI_UART_RX_GPIO=${MIDI_UART_RX_GPIO})
+    endif()
+else()
+    # not defined, so will be UART 1. Can enable UART 0 debugging
+    pico_enable_stdio_uart(${target_proj} 1)
+endif()
+# end uart config
+
+target_include_directories(${target_proj} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 pico_add_extra_outputs(16next)
 target_link_libraries(16next
@@ -27,6 +60,8 @@ target_link_libraries(16next
   pico_unique_id
   hardware_adc
   hardware_i2c
+  midi_uart_lib
+  ring_buffer_lib
   tinyusb_device
   tinyusb_board
 )
