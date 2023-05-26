@@ -196,6 +196,8 @@ int main() {
     updateControlsAt = make_timeout_time_ms(CONTROL_POLL_TIMEOUT);
 
     updateControls();
+
+    midi_uart_drain_tx_buffer(midi_uart_instance);
   }
   // end infinite loop
 }
