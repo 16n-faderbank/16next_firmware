@@ -188,9 +188,9 @@ void EEPROM::read(uint32_t eepromLocation, uint8_t *buff, uint16_t bufferSize) {
 void EEPROM::write(uint32_t eepromLocation, uint8_t dataToWrite)
 {
   // update only if data is new
-  if (read(eepromLocation) == dataToWrite) {
-    return;
-  }
+  // if (read(eepromLocation) == dataToWrite) {
+  //   return;
+  // }
 
   uint8_t tempByte;
   // read(eepromLocation, &tempByte, 1);
@@ -198,9 +198,9 @@ void EEPROM::write(uint32_t eepromLocation, uint8_t dataToWrite)
   uint8_t memaddr[] = {eepromLocation >> 8, eepromLocation & 0xFF};
   uint8_t writebuf[] = {memaddr[0],memaddr[1],dataToWrite};
 
-  // while(i2c_write_blocking(settings.i2cPort, settings.deviceAddress, writebuf, 3, false) < 1) {
+  while(i2c_write_blocking(settings.i2cPort, settings.deviceAddress, writebuf, 3, false) < 1) {
     i2c_write_blocking(settings.i2cPort, settings.deviceAddress, writebuf, 3, false);
-  // }
+  }
   sleep_ms(settings.pageWriteTime_ms);
 }
 
