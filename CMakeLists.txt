@@ -4,6 +4,9 @@ set(target_proj 16next)
 
 include(pico_sdk_import.cmake)
 
+set(PICO_BOARD 16next-proto)
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_SOURCE_DIR}/board)
+
 project(${target_proj} C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
