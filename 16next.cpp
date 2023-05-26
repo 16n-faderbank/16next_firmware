@@ -458,7 +458,7 @@ void applyConfig(uint8_t *conf) {
 }
 
 void saveConfig(uint8_t *config) {
-  eeprom.write(0,config,memoryMapLength);
+  eeprom.writeArray(0,config,memoryMapLength);
 }
 
 void setDefaultConfig() {
