@@ -6,24 +6,31 @@
  *    - write will look for a page, and if the first byte isn't 0xFF,
  *      it'll iterate through pages til it finds an empty one.
 */
+int firstEmptyPage() {
+  int addr, *p;
+  int first_empty_page = -1;
+  for (int page = 0; page < FLASH_SECTOR_SIZE / FLASH_PAGE_SIZE; page++) {
+    addr = XIP_BASE + FLASH_TARGET_OFFSET + (page * FLASH_PAGE_SIZE);
+
+    p = (int *)addr;
+    // printf("First four bytes of page %d", page);
+    // printf("( at 0x%02X) = ", p);
+    // printf("%08X\n", *p);
+    if (*p == -1 && first_empty_page < 0) {
+      first_empty_page = page;
+      // printf("First empty page is %d\n", first_empty_page);
+    }
+  }
+
+  return first_empty_page;
+}
 
 void writeFlash(uint32_t eepromLocation, uint8_t *buf, uint16_t bufferSize) {
    // Read the flash using memory-mapped addresses
   // For that we must skip over the XIP_BASE worth of RAM
   // int addr = FLASH_TARGET_OFFSET + XIP_BASE;
   int addr, *p;
-  int first_empty_page = -1;
-  for(unsigned int page = 0; page < FLASH_SECTOR_SIZE/FLASH_PAGE_SIZE; page++){
-    addr = XIP_BASE + FLASH_TARGET_OFFSET + (page * FLASH_PAGE_SIZE);
-    p = (int *)addr;
-    // Serial.print("First four bytes of page " + String(page, DEC) );
-    // Serial.print("( at 0x" + (String(int(p), HEX)) + ") = ");
-    // Serial.println(*p);
-    if( *p == -1 && first_empty_page < 0){
-      first_empty_page = page;
-      // Serial.println("First empty page is #" + String(first_empty_page, DEC));
-    }
-  }
+  int first_empty_page = firstEmptyPage();
 
   if (first_empty_page < 0){
     // Serial.println("Full sector, erasing...");
@@ -47,19 +54,7 @@ void readFlash(uint32_t eepromLocation, uint8_t *buf, uint16_t bufferSize) {
   // For that we must skip over the XIP_BASE worth of RAM
   // int addr = FLASH_TARGET_OFFSET + XIP_BASE;
   int addr, *p;
-  int last_data_page = -1;
-  for(unsigned int page = 0; page < FLASH_SECTOR_SIZE/FLASH_PAGE_SIZE; page++){
-    addr = XIP_BASE + FLASH_TARGET_OFFSET + (page * FLASH_PAGE_SIZE);
-    p = (int *)addr;
-    // Serial.print("First four bytes of page " + String(page, DEC) );
-    // Serial.print("( at 0x" + (String(int(p), HEX)) + ") = ");
-    // Serial.println(*p);
-    if( *p == -1 && last_data_page < 0){
-      last_data_page = page-1;
-      // Serial.println("First empty page is #" + String(first_empty_page, DEC));
-    }
-  }
-
+  int last_data_page = firstEmptyPage() - 1;
   // otherwise it's the last page
   if (last_data_page < 0){
     last_data_page = (FLASH_SECTOR_SIZE/FLASH_PAGE_SIZE)-1;
