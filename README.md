@@ -2,7 +2,8 @@
 
 ## TODO
 
-* enable TRS MIDI
+* fix EEPROM per-page writes?
+* experiment with using Flash instead of EEPROM?
 * enable TRS SPI1
 
 ## DONE
@@ -22,6 +23,7 @@
 * enable SPI0 EEPROM on right pins
 * connect to SPI0 EEPROM
 * do EEPROM per-page writes...
+* enable TRS MIDI
 
 
 ## TRS MIDI Notes
