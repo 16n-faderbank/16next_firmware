@@ -81,7 +81,7 @@ uint8_t sysexOffset = 0; // where in the buffer we start writing to.
 // | 32-47   | 1-16   | Channel for each control (TRS)     |
 // | 48-63   | 0-127  | CC for each control (USB)          |
 // | 64-79   | 0-127  | CC for each control (TRS)          |
-uint8_t memoryMapLength = 80;
+const uint8_t memoryMapLength = 80;
 uint8_t defaultMemoryMap[] = {
   0,1,0,0,0,0,0,0, // 0-7
   0,0,0,0,0,0,0,0, // 8-15
@@ -91,7 +91,7 @@ uint8_t defaultMemoryMap[] = {
   32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
 };
 
-int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to Mux positions, ie,
+const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to Mux positions, ie,
                                   // fader 6 is on mux input 0,
                                   // fader 4 is on mux input 1
 int previousValues[16];
@@ -284,7 +284,7 @@ void sendCurrentConfig() {
 
   // read 80 bytes from external eeprom
   uint8_t buf[80];
-  readFlash(0,buf,80);
+  readFlash(buf,80);
 
   // build a message from the version number...
   currentConfigData[0] = 0x04; // 0x04 == 16next device id
@@ -417,7 +417,7 @@ void updateControls(bool force) {
 void loadConfig(bool setDefault) {
   // read 80 bytes from EEPROM
   uint8_t buf[memoryMapLength];
-  readFlash(0,buf,memoryMapLength);
+  readFlash(buf,memoryMapLength);
   // if the 2nd byte is unwritten, that means we should write the default
   // settings to flash
   if (setDefault && (buf[1] == 0xFF)) {
@@ -457,11 +457,12 @@ void applyConfig(uint8_t *conf) {
   }
 }
 
-void saveConfig(uint8_t *config) {
-  writeFlash(0,config,memoryMapLength);
+void saveConfig(uint8_t * config) {
+  writeFlash(config,memoryMapLength);
 }
 
 void setDefaultConfig() {
+  eraseFlashSector();
   saveConfig(defaultMemoryMap);
 }
 
