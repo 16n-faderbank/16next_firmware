@@ -7,6 +7,9 @@
 
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
+#include "hardware/i2c.h"
+#include <i2c_fifo.h>
+#include <i2c_slave.h>
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -102,6 +105,24 @@ int main() {
     analog[i] = new ResponsiveAnalogRead(0, true, .0001);
     analog[i]->setActivityThreshold(32);
     analog[i]->enableEdgeSnap();
+  }
+
+  // set up I2C on jack
+  // GPIO 10 = I2C1 SDA
+  // GPIO 11 = I2C1 SCL
+  gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
+  gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
+  gpio_pull_up(I2C_SDA_PIN);
+  gpio_pull_up(I2C_SCL_PIN);
+  // Make the I2C pins available to picotool
+  bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
+
+  if(controller.i2cFollower) {
+    i2c_init(i2c1, I2C_BAUDRATE);
+    // configure I2C0 for slave mode
+    i2c_slave_init(i2c1, I2C_ADDRESS, &i2c_slave_handler);
+  } else {
+    // TODO: configure I2C master
   }
 
   // init TinyUSB
@@ -427,3 +448,20 @@ void setDefaultConfig() {
   saveConfig(defaultMemoryMap);
 }
 
+// Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
+// printing to stdio may interfere with interrupt handling.
+static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
+  switch (event) {
+  case I2C_SLAVE_RECEIVE: // master has written some data
+    // TODOTODOTODO
+    break;
+  case I2C_SLAVE_REQUEST: // master is requesting data
+    // TODOTODOTODO
+    break;
+  case I2C_SLAVE_FINISH: // master has signalled Stop / Restart
+    // ?
+    break;
+  default:
+    break;
+  }
+}

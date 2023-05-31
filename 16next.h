@@ -13,6 +13,12 @@
 #define MUX_PIN_COUNT 4 
 #define ADC_PIN 26
 #define INTERNAL_LED_PIN 22
+#define I2C_SDA_PIN 10
+#define I2C_SCL_PIN 11
+
+// I2C Address for Faderbank. 0x34 unless you ABSOLUTELY know what you are doing.
+#define I2C_ADDRESS 0x34
+#define I2C_BAUDRATE 400000
 
 #define MIDI_BLINK_DURATION 5000 // us
 
@@ -66,3 +72,4 @@ void setDefaultConfig();
 void sendByteArrayAsSysex(uint8_t messageId, uint8_t* byteArray, uint8_t byteArrayLength);
 void sendCurrentConfig();
 void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength);
+static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event);
