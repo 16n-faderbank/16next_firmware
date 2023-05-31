@@ -19,37 +19,6 @@
 #include "lib/ResponsiveAnalogRead.h"
 #include "lib/flash_onboard.h"
 
-#define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 0
-#define FIRMWARE_VERSION_POINT 0 
-
-#define FIRST_MUX_PIN 18
-#define MUX_PIN_COUNT 4 
-#define ADC_PIN 26
-#define INTERNAL_LED_PIN 22
-
-// UART selection Pin mapping. You can move these for your design if you want to
-// Make sure all these values are consistent with your choice of midi_uart
-// The default is to use UART 1, but you are free to use UART 0 if you make
-// the changes in the CMakeLists.txt file or in your environment. Note
-// that if you use UART0, then serial port debug will not be enabled
-#ifndef MIDI_UART_NUM
-#define MIDI_UART_NUM 1
-#endif
-#ifndef MIDI_UART_TX_GPIO
-#define MIDI_UART_TX_GPIO 4
-#endif
-#ifndef MIDI_UART_RX_GPIO
-#define MIDI_UART_RX_GPIO 5
-#endif
-
-// 2 for now, we're being cheapskates
-#define FADER_COUNT 2
-
-#define CONTROL_POLL_TIMEOUT 10 // ms
-
-#define MIDI_BLINK_DURATION 5000 // us
-
 const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
 absolute_time_t midiActivityLightOffAt;
@@ -63,8 +32,6 @@ ControllerConfig controller; // struct to hold controller config
 uint8_t sysexBuffer[128]; // 128 bytes to store incoming sysex in
 bool isReadingSysex = false;
 uint8_t sysexOffset = 0; // where in the buffer we start writing to.
-
-#define MIDI_INPUT_BUFFER 64
 
 // default memorymap
 // | Address | Format |            Description             |
@@ -109,7 +76,6 @@ int main() {
   bi_decl(bi_1pin_with_name(INTERNAL_LED_PIN, "On-board LED"));
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
-
   loadConfig(true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
   // init ADC0 on GPIO26
@@ -131,7 +97,6 @@ int main() {
   // setup TRS MIDI
   midi_uart_instance = midi_uart_configure(MIDI_UART_NUM, MIDI_UART_TX_GPIO, MIDI_UART_RX_GPIO);
 
-
   // setup analog read buckets
   for (int i = 0; i < FADER_COUNT; i++) {
     analog[i] = new ResponsiveAnalogRead(0, true, .0001);
@@ -139,8 +104,10 @@ int main() {
     analog[i]->enableEdgeSnap();
   }
 
+  // init TinyUSB
   tusb_init();
 
+  // make sure LED is off.
   gpio_put(INTERNAL_LED_PIN, 0);
   // end setup
 
@@ -181,6 +148,8 @@ int main() {
 
     updateControls();
 
+    // drain the TX buffer to the TRS midi out - if you don't include this,
+    // no data will ever get sent to the MIDI out.
     midi_uart_drain_tx_buffer(midi_uart_instance);
   }
   // end infinite loop
@@ -206,7 +175,7 @@ void midi_read_task() {
 
   // BEGIN SYSEX HANDLER
   if (inputBuffer[0] == 0xF0 && inputBuffer[1] == 0x7D && inputBuffer[2] == 0x00 && inputBuffer[3] == 0x00) {
-    // it's a sysex message and it's for us
+    // it's a sysex message and it's for us!
 
     // start the process of reading it
     isReadingSysex = true;
@@ -222,19 +191,15 @@ void midi_read_task() {
   }
   // END SYSEX HANDLER
 
-  // if it's not sysex
+  // if it's not sysex, forward it thru to midi TRS if relevant.
   if(controller.midiThru) {
     midi_uart_write_tx_buffer(midi_uart_instance,inputBuffer,streamLength);
   }
-
-  // null out inputbuffer
-  // for (int i = 0; i < MIDI_INPUT_BUFFER; i++) {
-  //   inputBuffer[i] = 0;
-  // }
 }
 
 void copySysexStreamToBuffer(uint8_t* inputBuffer, uint8_t streamLength) {
   bool shouldProcess = false;
+
   for(uint8_t i = 0; i < streamLength; i++) {
     sysexBuffer[i+sysexOffset] = inputBuffer[i];
     if(inputBuffer[i] == 0xF7) {
@@ -242,6 +207,7 @@ void copySysexStreamToBuffer(uint8_t* inputBuffer, uint8_t streamLength) {
       break;
     }
   }
+
   if(shouldProcess) {
     // we saw an 0xF7, sysex is over, time to process
     processSysexBuffer();
@@ -254,6 +220,7 @@ void copySysexStreamToBuffer(uint8_t* inputBuffer, uint8_t streamLength) {
 
 void processSysexBuffer() {
   isReadingSysex = false;
+
   switch (sysexBuffer[4]) {
   case 0x1F:
     // 0x1F == tell me your 1nFo

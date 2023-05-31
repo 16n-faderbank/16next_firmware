@@ -3,6 +3,40 @@
  *
 */
 
+#define FIRMWARE_VERSION_MAJOR 3
+#define FIRMWARE_VERSION_MINOR 0
+#define FIRMWARE_VERSION_POINT 0 
+
+// 2 for now, we're being cheapskates
+// TODO: make 16!
+#define FADER_COUNT 2
+
+#define FIRST_MUX_PIN 18
+#define MUX_PIN_COUNT 4 
+#define ADC_PIN 26
+#define INTERNAL_LED_PIN 22
+
+#define MIDI_BLINK_DURATION 5000 // us
+
+// UART selection Pin mapping. You can move these for your design if you want to
+// Make sure all these values are consistent with your choice of midi_uart
+// The default is to use UART 1, but you are free to use UART 0 if you make
+// the changes in the CMakeLists.txt file or in your environment. Note
+// that if you use UART0, then serial port debug will not be enabled
+#ifndef MIDI_UART_NUM
+#define MIDI_UART_NUM 1
+#endif
+#ifndef MIDI_UART_TX_GPIO
+#define MIDI_UART_TX_GPIO 4
+#endif
+#ifndef MIDI_UART_RX_GPIO
+#define MIDI_UART_RX_GPIO 5
+#endif
+
+#define MIDI_INPUT_BUFFER 64
+
+#define CONTROL_POLL_TIMEOUT 10 // ms
+
 /*
  * Data structure containing all elements of controller config.
 */
