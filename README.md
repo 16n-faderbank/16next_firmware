@@ -2,7 +2,6 @@
 
 ## TODO
 
-* enable Midi THRU
 * enable TRS SPI1
 
 ## DONE
@@ -24,6 +23,7 @@
 * do EEPROM per-page writes...
 * enable TRS MIDI
 * port to onboard flash from EEPROM
+* enable Midi THRU
 
 
 ## TRS MIDI Notes

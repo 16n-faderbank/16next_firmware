@@ -142,8 +142,6 @@ int main() {
   tusb_init();
 
   gpio_put(INTERNAL_LED_PIN, 0);
-
-
   // end setup
 
   // begin infinite loop
@@ -193,8 +191,11 @@ void midi_read_task() {
   uint8_t streamLength;
   while (tud_midi_available()) {
     streamLength = tud_midi_stream_read(inputBuffer, MIDI_INPUT_BUFFER);
-    midiActivity = true;
-    midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
+    // if it's not clock...
+    if(inputBuffer[0] != 0xF8) {
+      midiActivity = true;
+      midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
+    }
   }
 
   if(isReadingSysex) {
@@ -220,6 +221,11 @@ void midi_read_task() {
     return;
   }
   // END SYSEX HANDLER
+
+  // if it's not sysex
+  if(controller.midiThru) {
+    midi_uart_write_tx_buffer(midi_uart_instance,inputBuffer,streamLength);
+  }
 
   // null out inputbuffer
   // for (int i = 0; i < MIDI_INPUT_BUFFER; i++) {
