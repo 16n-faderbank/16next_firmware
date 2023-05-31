@@ -21,6 +21,7 @@ add_executable(${target_proj}
 )
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib/midi_uart_lib)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib/i2c_slave)
 
 # begin uart config
 if(DEFINED ENV{MIDI_UART_NUM})
@@ -64,6 +65,7 @@ target_link_libraries(16next
   hardware_flash
   hardware_i2c
   hardware_sync
+  i2c_slave
   midi_uart_lib
   ring_buffer_lib
   tinyusb_device

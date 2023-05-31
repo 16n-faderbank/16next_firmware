@@ -49,6 +49,10 @@ We use the last sector (4096 bytes) of onboard flash ram as a wear-levelled 256b
   * if there's no empty page, you need to erase the whole sector and write to page 0
 * 256 bytes is enough for the kind of storage we're doing.
 
+## I2C Notes
+
+https://github.com/vmilea/pico_i2c_slave is helpful; we're using their library.
+
 ---
 
 16next is a controller for electronic music. It is 16 faders that manifest as:
