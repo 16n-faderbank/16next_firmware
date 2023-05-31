@@ -110,19 +110,7 @@ int main() {
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
 
-  // setup EEPROM on I2C0, on GPIO 11/12
-  // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a Pico)
-  // i2c_init(i2c0, 100 * 1000);
-  // gpio_set_function(8, GPIO_FUNC_I2C);
-  // gpio_set_function(9, GPIO_FUNC_I2C);
-  // gpio_pull_up(8);
-  // gpio_pull_up(9);
-  // // Make the I2C pins available to picotool
-  // bi_decl(bi_2pins_with_func(8, 9, GPIO_FUNC_I2C));
-
-  // eeprom.begin();
-
-  loadConfig(true); // load config from eeprom; write default config TO eeprom if byte 1 is 0xFF
+  loadConfig(true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
   // init ADC0 on GPIO26
   adc_init();
@@ -282,7 +270,7 @@ void sendCurrentConfig() {
   uint8_t configDataLength = 4 + memoryMapLength;
   uint8_t currentConfigData[configDataLength];
 
-  // read 80 bytes from external eeprom
+  // read 80 bytes from internal flash
   uint8_t buf[80];
   readFlash(buf,80);
 
@@ -415,7 +403,7 @@ void updateControls(bool force) {
 }
 
 void loadConfig(bool setDefault) {
-  // read 80 bytes from EEPROM
+  // read 80 bytes from internal flash
   uint8_t buf[memoryMapLength];
   readFlash(buf,memoryMapLength);
   // if the 2nd byte is unwritten, that means we should write the default

@@ -34,6 +34,21 @@ You'll need to do
 
 to pull in necessary submodules. We're using `midi_uart_lib` for TRS MIDI: https://github.com/rppicomidi/midi_uart_lib
 
+## Flash Notes
+
+We use the last sector (4096 bytes) of onboard flash ram as a wear-levelled 256byte storage, a bit like an EERPOM: 
+
+* you can only WRITE to a page (256 bytes) (and no less)
+* you can only WRITE to erased data (ie, flip bits low)
+* you can only ERASE a _sector_ (4096 bytes)
+* so, as per https://www.makermatrix.com/blog/read-and-write-data-with-the-pi-pico-onboard-flash , we can use this as a form of wear levelling:
+  * find the last sector in memory
+  * find the first page that begins with 0xFF
+  * that's the page to write to
+  * the page to read from is `lastEmptyPage-1`
+  * if there's no empty page, you need to erase the whole sector and write to page 0
+* 256 bytes is enough for the kind of storage we're doing.
+
 ---
 
 16next is a controller for electronic music. It is 16 faders that manifest as:
