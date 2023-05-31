@@ -17,7 +17,7 @@
 
 #include "16next.h"
 #include "lib/ResponsiveAnalogRead.h"
-#include "lib/local_flash.h"
+#include "lib/flash_onboard.h"
 
 #define FIRMWARE_VERSION_MAJOR 3
 #define FIRMWARE_VERSION_MINOR 0

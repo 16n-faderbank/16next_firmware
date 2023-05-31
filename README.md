@@ -2,8 +2,7 @@
 
 ## TODO
 
-* fix EEPROM per-page writes?
-* experiment with using Flash instead of EEPROM?
+* enable Midi THRU
 * enable TRS SPI1
 
 ## DONE
@@ -24,6 +23,7 @@
 * connect to SPI0 EEPROM
 * do EEPROM per-page writes...
 * enable TRS MIDI
+* port to onboard flash from EEPROM
 
 
 ## TRS MIDI Notes

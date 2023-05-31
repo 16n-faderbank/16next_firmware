@@ -1,4 +1,4 @@
-#include "local_flash.h"
+#include "flash_onboard.h"
 
 int firstEmptyPage() {
   int addr, *p;

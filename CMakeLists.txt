@@ -15,7 +15,7 @@ pico_sdk_init()
 
 add_executable(${target_proj}
   16next.cpp
-  lib/local_flash.cpp
+  lib/flash_onboard.cpp
   lib/ResponsiveAnalogRead.cpp
   usb_descriptors.c
 )
@@ -57,6 +57,7 @@ endif()
 target_include_directories(${target_proj} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 pico_add_extra_outputs(16next)
+
 target_link_libraries(16next
   PRIVATE
   pico_stdlib
