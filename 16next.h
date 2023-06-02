@@ -7,9 +7,7 @@
 #define FIRMWARE_VERSION_MINOR 0
 #define FIRMWARE_VERSION_POINT 0 
 
-// 2 for now, we're being cheapskates
-// TODO: make 16!
-#define FADER_COUNT 2
+#define FADER_COUNT 16
 
 #define FIRST_MUX_PIN 18
 #define MUX_PIN_COUNT 4 
