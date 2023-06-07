@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(target_proj 16next)
+project(${target_proj} C CXX ASM)
 
 include(pico_sdk_import.cmake)
 
 set(PICO_BOARD 16next-proto)
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_SOURCE_DIR}/board)
 
-project(${target_proj} C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -17,11 +17,11 @@ add_executable(${target_proj}
   16next.cpp
   lib/flash_onboard.cpp
   lib/ResponsiveAnalogRead.hpp
+  lib/tx_helper/tx_helper.cpp
   usb_descriptors.c
 )
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib/midi_uart_lib)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib/i2c_slave)
 
 # begin uart config
 if(DEFINED ENV{MIDI_UART_NUM})
@@ -65,8 +65,8 @@ target_link_libraries(16next
   hardware_flash
   hardware_i2c
   hardware_sync
-  i2c_slave
   midi_uart_lib
+  pico_i2c_slave
   ring_buffer_lib
   tinyusb_device
   tinyusb_board

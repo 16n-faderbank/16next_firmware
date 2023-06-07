@@ -3,6 +3,8 @@
  *
 */
 
+#include "pico/i2c_slave.h"
+
 #define FIRMWARE_VERSION_MAJOR 3
 #define FIRMWARE_VERSION_MINOR 0
 #define FIRMWARE_VERSION_POINT 0 

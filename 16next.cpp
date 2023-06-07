@@ -8,9 +8,8 @@
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
-#include <i2c_fifo.h>
-#include <i2c_slave.h>
 #include "pico/binary_info.h"
+#include "pico/i2c_slave.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
 
@@ -21,6 +20,7 @@
 #include "16next.h"
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/flash_onboard.h"
+#include "lib/tx_helper/tx_helper.h"
 
 const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
@@ -71,6 +71,10 @@ ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog
 
 static void *midi_uart_instance;
 
+// helper values for i2c reading and future expansion
+int activeInput = 0;
+int activeMode = 0;
+
 int main() {
   board_init();
 
@@ -80,6 +84,11 @@ int main() {
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
   loadConfig(true); // load config from flash; write default config TO flash if byte 1 is 0xFF
+
+  // configure i2c helper
+  TxHelper::UseI2CPort1(true);
+  TxHelper::SetPorts(16);
+  TxHelper::SetModes(4);
 
   // init ADC0 on GPIO26
   adc_init();
@@ -451,12 +460,41 @@ void setDefaultConfig() {
 // Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
 // printing to stdio may interfere with interrupt handling.
 static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
+  TxIO io;
+  TxResponse response;
+  uint16_t shiftReady = 0;
+  uint16_t outputValue;
+
   switch (event) {
   case I2C_SLAVE_RECEIVE: // master has written some data
     // TODOTODOTODO
+    // D(Serial.printf("i2c Write (%d)\n", len));
+
+    // parse the response
+    response = TxHelper::Parse(1);
+    // use a helper to decode the command
+    io = TxHelper::DecodeIO(response.Command);
+
+    // D(Serial.printf("Port: %d; Mode: %d [%d]\n", io.Port, io.Mode, response.Command));
+
+    // this is the single byte that sets the active input
+    activeInput = io.Port;
+    activeMode = io.Mode;
     break;
   case I2C_SLAVE_REQUEST: // master is requesting data
-    // TODOTODOTODO
+    // received an i2c read request
+
+    // get and cast the value
+    outputValue = analog[activeInput]->getValue();
+    if(controller.rotated) {
+      outputValue = analog[FADER_COUNT+16-activeInput]->getValue();
+      outputValue = 4095-outputValue;
+    }
+    shiftReady = outputValue;
+
+    // send the puppy as a pair of bytes
+    i2c_write_byte_raw(i2c1, shiftReady >> 8);
+    i2c_write_byte_raw(i2c1, shiftReady & 255);
     break;
   case I2C_SLAVE_FINISH: // master has signalled Stop / Restart
     // ?
