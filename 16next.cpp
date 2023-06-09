@@ -16,7 +16,7 @@
 #include "tusb.h"
 
 #include "16next.h"
-#include "lib/ResponsiveAnalogRead.h"
+#include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/flash_onboard.h"
 
 const uint32_t target_addr = 0;
