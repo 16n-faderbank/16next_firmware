@@ -21,6 +21,7 @@ add_executable(${target_proj}
 # TODO does this work?
 target_sources(${target_proj}
   PRIVATE
+  lib/config.cpp
   lib/flash_onboard.cpp
   lib/ResponsiveAnalogRead.hpp
   usb_descriptors.c

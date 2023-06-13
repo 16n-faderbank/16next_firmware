@@ -1,3 +1,5 @@
+#pragma once
+
 #include <hardware/sync.h>
 #include <hardware/flash.h>
 
@@ -5,6 +7,9 @@
 #include <pico/stdlib.h>
 
 #define FLASH_TARGET_OFFSET (PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE)
+
+extern const uint8_t memoryMapLength;
+extern uint8_t defaultMemoryMap[];
 
 int firstEmptyPage();
 void eraseFlashSector();

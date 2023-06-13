@@ -19,6 +19,7 @@
 
 #include "16next.h"
 #include "lib/ResponsiveAnalogRead.hpp"
+#include "lib/config.h"
 #include "lib/flash_onboard.h"
 
 const uint32_t target_addr = 0;
@@ -34,31 +35,6 @@ ControllerConfig controller; // struct to hold controller config
 uint8_t sysexBuffer[128]; // 128 bytes to store incoming sysex in
 bool isReadingSysex = false;
 uint8_t sysexOffset = 0; // where in the buffer we start writing to.
-
-// default memorymap
-// | Address | Format |            Description             |
-// |---------|--------|------------------------------------|
-// | 0       | 0/1    | LED on when powered                |
-// | 1       | 0/1    | LED blink on MIDI data             |
-// | 2       | 0/1    | Rotate controller outputs via 180º |
-// | 3       | 0/1    | I2C Master/Follower                |
-// | 4,5     | 0-127  | FADERMIN lsb/msb                   |
-// | 6,7     | 0-127  | FADERMAX lsb/msb                   |
-// | 8       | 0/1    | Soft MIDI thru (default 0)         |
-// | 9-15    |        | Currently unused                   |
-// | 16-31   | 1-16   | Channel for each control (USB)     |
-// | 32-47   | 1-16   | Channel for each control (TRS)     |
-// | 48-63   | 0-127  | CC for each control (USB)          |
-// | 64-79   | 0-127  | CC for each control (TRS)          |
-const uint8_t memoryMapLength = 80;
-uint8_t defaultMemoryMap[] = {
-  0,1,0,1,0,0,0,0, // 0-7
-  0,0,0,0,0,0,0,0, // 8-15
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
-  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
-  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
-};
 
 const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to Mux positions, ie,
                                   // fader 6 is on mux input 0,
@@ -83,7 +59,7 @@ int main() {
   bi_decl(bi_1pin_with_name(INTERNAL_LED_PIN, "On-board LED"));
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
-  loadConfig(true); // load config from flash; write default config TO flash if byte 1 is 0xFF
+  loadConfig(controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
   // init ADC0 on GPIO26
   adc_init();
@@ -258,12 +234,12 @@ void processSysexBuffer() {
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
-    updateConfig(sysexBuffer, 128);
+    updateConfig(sysexBuffer, 128, controller);
     break;
   case 0x1A:
     // 0x1A == initi1Alize to factory defaults
     setDefaultConfig();
-    loadConfig();
+    loadConfig(controller);
     break;
   }
 }
@@ -295,26 +271,6 @@ void sendCurrentConfig() {
   // send the current state of the faders in 1s time.
   shouldSendControlUpdate = true;
   sendForcedUpdateAt = make_timeout_time_ms(100);
-}
-
-void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength) {
-  // OK:
-  uint8_t newMemoryMap[memoryMapLength];
-
-  // 1) read the data that's just come in, and extract the 80 bytes of memory
-  // to a variable we offset by five to strip: SYSEX_START,MFG0,MFG1,MFG2,MSG
-  // and then also to strip
-  // * device ID
-  // * firmware MAJ/Min/POINT
-  for (uint8_t i = 0; i < memoryMapLength; i++) {
-    newMemoryMap[i] = incomingSysex[i + 9];
-  }
-
-  // 2) store that into memory...
-  saveConfig(newMemoryMap);
-
-  // 3) and now read that memory, loading it as data
-  applyConfig(newMemoryMap);
 }
 
 void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
@@ -413,57 +369,9 @@ void updateControls(bool force) {
   }
 }
 
-void loadConfig(bool setDefault) {
-  // read 80 bytes from internal flash
-  uint8_t buf[memoryMapLength];
-  readFlash(buf,memoryMapLength);
-  // if the 2nd byte is unwritten, that means we should write the default
-  // settings to flash
-  if (setDefault && (buf[1] == 0xFF)) {
-    setDefaultConfig();
-    sleep_us(500);
-    loadConfig(); // call yourself again, and default to read + apply
-  } else {
-    applyConfig(buf);
-  }
-}
 
-void applyConfig(uint8_t *conf) {
-  // take the config in a buffer and apply it to the device
-  // this means you could load from RAM or just go straight from sysex.
 
-  controller.powerLed = conf[0];
-  controller.midiLed = conf[1];
-  controller.rotated = conf[2];
-  controller.i2cLeader = conf[3];
-  controller.midiThru = conf[8];
 
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    controller.usbMidiChannels[i] = conf[16+i];
-  }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    controller.trsMidiChannels[i] = conf[32+i];
-  }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    controller.usbCCs[i] = conf[48+i];
-  }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    controller.trsCCs[i] = conf[64+i];
-  }
-}
-
-void saveConfig(uint8_t * config) {
-  writeFlash(config,memoryMapLength);
-}
-
-void setDefaultConfig() {
-  eraseFlashSector();
-  saveConfig(defaultMemoryMap);
-}
 
 // Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
 // printing to stdio may interfere with interrupt handling.
