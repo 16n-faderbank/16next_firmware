@@ -21,8 +21,8 @@
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/config.h"
 #include "lib/flash_onboard.h"
+#include "lib/sysex.h"
 
-const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
 absolute_time_t midiActivityLightOffAt;
 bool midiActivity = false;
@@ -47,9 +47,8 @@ ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog
 
 static void *midi_uart_instance;
 
-// helper values for i2c reading and future expansion
+// active input for I2C
 int activeInput = 0;
-int activeMode = 0;
 
 int main() {
   board_init();
@@ -175,7 +174,16 @@ void midi_read_task() {
 
   if(isReadingSysex) {
     // keep doing sysex stuff
-    copySysexStreamToBuffer(inputBuffer, streamLength);
+    bool sysexComplete = copySysexStreamToBuffer(sysexBuffer, inputBuffer, streamLength, sysexOffset);
+
+    if(sysexComplete) {
+      // we saw an 0xF7, sysex is over, time to process
+      processSysexBuffer();
+    } else {
+      // we still haven't seen the end of message, glue it on the end
+      // and process the next 64-byte chunk
+      sysexOffset += streamLength;
+    }
     return;
   }
 
@@ -192,7 +200,16 @@ void midi_read_task() {
       sysexBuffer[i] = 0x00;
     }
 
-    copySysexStreamToBuffer(inputBuffer, streamLength);
+    bool sysexComplete = copySysexStreamToBuffer(sysexBuffer, inputBuffer, streamLength, sysexOffset);
+
+    if(sysexComplete) {
+      // we saw an 0xF7, sysex is over, time to process
+      processSysexBuffer();
+    } else {
+      // we still haven't seen the end of message, glue it on the end
+      // and process the next 64-byte chunk
+      sysexOffset += streamLength;
+    }
     return;
   }
   // END SYSEX HANDLER
@@ -203,27 +220,6 @@ void midi_read_task() {
   }
 }
 
-void copySysexStreamToBuffer(uint8_t* inputBuffer, uint8_t streamLength) {
-  bool shouldProcess = false;
-
-  for(uint8_t i = 0; i < streamLength; i++) {
-    sysexBuffer[i+sysexOffset] = inputBuffer[i];
-    if(inputBuffer[i] == 0xF7) {
-      shouldProcess = true;
-      break;
-    }
-  }
-
-  if(shouldProcess) {
-    // we saw an 0xF7, sysex is over, time to process
-    processSysexBuffer();
-  } else {
-    // we still haven't seen the end of message, glue it on the end
-    // and process the next 64-byte chunk
-    sysexOffset += streamLength;
-  }
-}
-
 void processSysexBuffer() {
   isReadingSysex = false;
 
@@ -231,6 +227,8 @@ void processSysexBuffer() {
   case 0x1F:
     // 0x1F == tell me your 1nFo
     sendCurrentConfig();
+    shouldSendControlUpdate = true;
+    sendForcedUpdateAt = make_timeout_time_ms(100);
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
@@ -241,72 +239,6 @@ void processSysexBuffer() {
     setDefaultConfig();
     loadConfig(controller);
     break;
-  }
-}
-
-void sendCurrentConfig() {
-  // current Data length = memory + 3 bytes for firmware version + 1 byte for device ID
-  uint8_t configDataLength = 4 + memoryMapLength;
-  uint8_t currentConfigData[configDataLength];
-
-  // read 80 bytes from internal flash
-  uint8_t buf[80];
-  readFlash(buf,80);
-
-  // build a message from the version number...
-  currentConfigData[0] = 0x04; // 0x04 == 16next device id
-  currentConfigData[1] = FIRMWARE_VERSION_MAJOR;
-  currentConfigData[2] = FIRMWARE_VERSION_MINOR;
-  currentConfigData[3] = FIRMWARE_VERSION_POINT;
-
-  // ... and the first 80 bytes of the external data
-  for (uint8_t i = 0; i < memoryMapLength; i++) {
-    // TODO: remove default Memory Map, read from memory
-    currentConfigData[i+4] = buf[i];
-  }
-
-  // send as sysex; 0x0F == c0nFig
-  sendByteArrayAsSysex(0x0F, currentConfigData, configDataLength);
-
-  // send the current state of the faders in 1s time.
-  shouldSendControlUpdate = true;
-  sendForcedUpdateAt = make_timeout_time_ms(100);
-}
-
-void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
-                          uint8_t byteArrayLength) {
-  uint8_t outputMessageLength =
-      1 + 3 + 1 + byteArrayLength + 1; // start/mfg/message/data/end
-  uint8_t outputMessage[outputMessageLength];
-  outputMessage[0] = 0xF0; // start Sysex
-  outputMessage[1] = 0x7D; // MFG byte 1
-  outputMessage[2] = 0x00; // MFG byte 2
-  outputMessage[3] = 0x00; // MFG byte 3
-  outputMessage[4] = messageId;
-  for (uint8_t i = 0; i < byteArrayLength; i++) {
-    uint8_t el = byteArray[i];
-    outputMessage[i + 5] = el;
-  }
-  outputMessage[outputMessageLength - 1] = 0xF7; // end Sysex
-
-  // how many chunks of 16 bytes is the message?
-  uint8_t chunks = (outputMessageLength / 16) + 1;
-
-  // for each chunk
-  for (uint8_t chunk = 0; chunk < chunks; chunk++) {
-    // offset within outputMessage
-    uint8_t offset = chunk * 16;
-
-    uint8_t chunkLength = 16;
-    uint8_t tempBuf[16];
-    if (chunk + 1 == chunks) {
-      // we're in the final chunk so:
-      chunkLength = outputMessageLength % 16;
-    }
-    for (uint8_t i = 0; i < chunkLength; i++) {
-      tempBuf[i] = outputMessage[offset + i];
-    }
-    tud_midi_stream_write(0, tempBuf, chunkLength);
   }
 }
 
@@ -368,10 +300,6 @@ void updateControls(bool force) {
     }
   }
 }
-
-
-
-
 
 // Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
 // printing to stdio may interfere with interrupt handling.

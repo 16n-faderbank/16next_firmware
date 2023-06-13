@@ -46,10 +46,8 @@
 /*
  * Functions appearing in 16next.cpp
 */
+
 void midi_read_task();
-void processSysexBuffer();
-void copySysexStreamToBuffer(uint8_t* inputBuffer, uint8_t streamLength);
-void sendByteArrayAsSysex(uint8_t messageId, uint8_t* byteArray, uint8_t byteArrayLength);
-void sendCurrentConfig();
 void updateControls(bool force=false);
 static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event);
+void processSysexBuffer();
