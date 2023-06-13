@@ -50,7 +50,7 @@ struct ControllerConfig {
   bool powerLed;
   bool midiLed;
   bool rotated;
-  bool i2cFollower;
+  bool i2cLeader;
   uint32_t faderMin;
   uint32_t faderMax;
   bool midiThru;

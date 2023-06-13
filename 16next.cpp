@@ -20,7 +20,6 @@
 #include "16next.h"
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/flash_onboard.h"
-#include "lib/tx_helper/tx_helper.h"
 
 const uint32_t target_addr = 0;
 absolute_time_t updateControlsAt;
@@ -53,7 +52,7 @@ uint8_t sysexOffset = 0; // where in the buffer we start writing to.
 // | 64-79   | 0-127  | CC for each control (TRS)          |
 const uint8_t memoryMapLength = 80;
 uint8_t defaultMemoryMap[] = {
-  0,1,0,0,0,0,0,0, // 0-7
+  0,1,0,1,0,0,0,0, // 0-7
   0,0,0,0,0,0,0,0, // 8-15
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
@@ -65,6 +64,7 @@ const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this fader
                                   // fader 6 is on mux input 0,
                                   // fader 4 is on mux input 1
 int previousValues[16];
+int i2cData[16];
 int muxMask;
 
 ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog read.
@@ -84,11 +84,6 @@ int main() {
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
   loadConfig(true); // load config from flash; write default config TO flash if byte 1 is 0xFF
-
-  // configure i2c helper
-  TxHelper::UseI2CPort1(true);
-  TxHelper::SetPorts(16);
-  TxHelper::SetModes(4);
 
   // init ADC0 on GPIO26
   adc_init();
@@ -119,6 +114,8 @@ int main() {
   // set up I2C on jack
   // GPIO 10 = I2C1 SDA
   // GPIO 11 = I2C1 SCL
+  gpio_init(I2C_SDA_PIN);
+  gpio_init(I2C_SCL_PIN);
   gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(I2C_SDA_PIN);
@@ -126,12 +123,15 @@ int main() {
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  if(controller.i2cFollower) {
+  // TODO ok this is bugged.
+  // we should check something is up here
+
+  if(controller.i2cLeader) {
+    // TODO: configure I2C master/leader
+  } else {
     i2c_init(i2c1, I2C_BAUDRATE);
     // configure I2C0 for slave mode
     i2c_slave_init(i2c1, I2C_ADDRESS, &i2c_slave_handler);
-  } else {
-    // TODO: configure I2C master
   }
 
   // init TinyUSB
@@ -377,6 +377,14 @@ void updateControls(bool force) {
         analog[i]->update(rawAdcValue);
       }
 
+      // store the current value of the fader in this block
+      // for i2c purposes
+      if(controller.rotated) {
+        i2cData[i] = 4095 - analog[FADER_COUNT+16-i]->getValue();
+      } else {
+        i2cData[i] =analog[i]->getValue();
+      }
+
       // test the scaled version against the previous CC.
       uint8_t outputValue = analog[i]->getValue() >> 5;
       if ((outputValue != previousValues[i]) || force) {
@@ -427,7 +435,7 @@ void applyConfig(uint8_t *conf) {
   controller.powerLed = conf[0];
   controller.midiLed = conf[1];
   controller.rotated = conf[2];
-  controller.i2cFollower = conf[3];
+  controller.i2cLeader = conf[3];
   controller.midiThru = conf[8];
 
   for (uint8_t i = 0; i < 16; i++)
@@ -460,44 +468,33 @@ void setDefaultConfig() {
 // Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
 // printing to stdio may interfere with interrupt handling.
 static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
-  TxIO io;
-  TxResponse response;
   uint16_t shiftReady = 0;
   uint16_t outputValue;
+  uint8_t incoming;
 
   switch (event) {
   case I2C_SLAVE_RECEIVE: // master has written some data
-    // TODOTODOTODO
-    // D(Serial.printf("i2c Write (%d)\n", len));
-
     // parse the response
-    response = TxHelper::Parse(1);
-    // use a helper to decode the command
-    io = TxHelper::DecodeIO(response.Command);
+    activeInput = i2c_read_byte_raw(i2c);
+    if(activeInput < 0) {
+      activeInput = 0;
+    }
+    if(activeInput > FADER_COUNT-1) {
+      activeInput = FADER_COUNT - 1;
+    }
 
-    // D(Serial.printf("Port: %d; Mode: %d [%d]\n", io.Port, io.Mode, response.Command));
-
-    // this is the single byte that sets the active input
-    activeInput = io.Port;
-    activeMode = io.Mode;
     break;
   case I2C_SLAVE_REQUEST: // master is requesting data
     // received an i2c read request
 
     // get and cast the value
-    outputValue = analog[activeInput]->getValue();
-    if(controller.rotated) {
-      outputValue = analog[FADER_COUNT+16-activeInput]->getValue();
-      outputValue = 4095-outputValue;
-    }
-    shiftReady = outputValue;
+    shiftReady = i2cData[activeInput];
 
     // send the puppy as a pair of bytes
-    i2c_write_byte_raw(i2c1, shiftReady >> 8);
-    i2c_write_byte_raw(i2c1, shiftReady & 255);
+    i2c_write_byte_raw(i2c, shiftReady >> 8);
+    i2c_write_byte_raw(i2c, shiftReady & 255);
     break;
   case I2C_SLAVE_FINISH: // master has signalled Stop / Restart
-    // ?
     break;
   default:
     break;

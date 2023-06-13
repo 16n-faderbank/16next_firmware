@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.13)
 
+include(pico_sdk_import.cmake)
+
 set(target_proj 16next)
 project(${target_proj} C CXX ASM)
 
-include(pico_sdk_import.cmake)
 
 set(PICO_BOARD 16next-proto)
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_SOURCE_DIR}/board)
@@ -15,9 +16,13 @@ pico_sdk_init()
 
 add_executable(${target_proj}
   16next.cpp
+)
+
+# TODO does this work?
+target_sources(${target_proj}
+  PRIVATE
   lib/flash_onboard.cpp
   lib/ResponsiveAnalogRead.hpp
-  lib/tx_helper/tx_helper.cpp
   usb_descriptors.c
 )
 
