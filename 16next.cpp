@@ -21,7 +21,7 @@
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/config.h"
 #include "lib/flash_onboard.h"
-#include "lib/i2c.h"
+#include "lib/i2c_utils.h"
 #include "lib/sysex.h"
 
 absolute_time_t updateControlsAt;

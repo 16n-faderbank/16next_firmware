@@ -23,7 +23,7 @@ target_sources(${target_proj}
   PRIVATE
   lib/config.cpp
   lib/flash_onboard.cpp
-  lib/i2c.cpp
+  lib/i2c_utils.cpp
   lib/sysex.cpp
   lib/ResponsiveAnalogRead.hpp
   usb_descriptors.c

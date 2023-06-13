@@ -2,7 +2,7 @@
 #include <pico/stdio.h>
 #include "hardware/i2c.h"
 
-#include "i2c.h"
+#include "i2c_utils.h"
 
 uint8_t device = 0;
 uint8_t port = 0;
