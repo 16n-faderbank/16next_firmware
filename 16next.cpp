@@ -21,6 +21,7 @@
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/config.h"
 #include "lib/flash_onboard.h"
+#include "lib/i2c.h"
 #include "lib/sysex.h"
 
 absolute_time_t updateControlsAt;
@@ -59,6 +60,10 @@ int main() {
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
   loadConfig(&controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
+
+  if(controller.i2cLeader) {
+    sleep_ms(BOOTDELAY);
+  }
 
   // init ADC0 on GPIO26
   adc_init();
@@ -103,6 +108,8 @@ int main() {
 
   if(controller.i2cLeader) {
     // TODO: configure I2C master/leader
+    i2c_init(i2c1, I2C_BAUDRATE);
+    scanI2Cbus();
   } else {
     i2c_init(i2c1, I2C_BAUDRATE);
     // configure I2C0 for slave mode
@@ -296,6 +303,10 @@ void updateControls(bool force) {
 
         midiActivity = true;
         midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
+      }
+
+      if(controller.i2cLeader) {
+        sendToAllI2C(i, i2cData[i]);
       }
     }
   }

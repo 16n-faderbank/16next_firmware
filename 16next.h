@@ -22,6 +22,10 @@
 #define I2C_ADDRESS 0x34
 #define I2C_BAUDRATE 400000
 
+// define startup delay in milliseconds for i2c Leader devices
+// this gives follower devices time to boot up.
+#define BOOTDELAY 10000
+
 #define MIDI_BLINK_DURATION 5000 // us
 
 // UART selection Pin mapping. You can move these for your design if you want to
