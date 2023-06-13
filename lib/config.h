@@ -23,8 +23,8 @@ struct ControllerConfig {
 extern const uint8_t memoryMapLength;
 extern uint8_t defaultMemoryMap[];
 
-void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength, ControllerConfig cConfig);
-void loadConfig(ControllerConfig cConfig, bool setDefault=false);
-void applyConfig(uint8_t* config, ControllerConfig cConfig);
+void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength, ControllerConfig* cConfig);
+void loadConfig(ControllerConfig* cConfig, bool setDefault=false);
+void applyConfig(uint8_t* config, ControllerConfig* cConfig);
 void saveConfig(uint8_t* config);
 void setDefaultConfig();

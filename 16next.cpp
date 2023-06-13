@@ -58,7 +58,7 @@ int main() {
   bi_decl(bi_1pin_with_name(INTERNAL_LED_PIN, "On-board LED"));
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
 
-  loadConfig(controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
+  loadConfig(&controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
   // init ADC0 on GPIO26
   adc_init();
@@ -232,12 +232,12 @@ void processSysexBuffer() {
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
-    updateConfig(sysexBuffer, 128, controller);
+    updateConfig(sysexBuffer, 128, &controller);
     break;
   case 0x1A:
     // 0x1A == initi1Alize to factory defaults
     setDefaultConfig();
-    loadConfig(controller);
+    loadConfig(&controller);
     break;
   }
 }

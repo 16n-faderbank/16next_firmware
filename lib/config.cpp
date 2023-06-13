@@ -27,7 +27,7 @@ uint8_t defaultMemoryMap[] = {
   32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
 };
 
-void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, ControllerConfig cConfig) {
+void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength, ControllerConfig* cConfig) {
   // OK:
   uint8_t newMemoryMap[memoryMapLength];
 
@@ -47,7 +47,7 @@ void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, Controlle
   applyConfig(newMemoryMap, cConfig);
 }
 
-void loadConfig(ControllerConfig cConfig, bool setDefault) {
+void loadConfig(ControllerConfig* cConfig, bool setDefault) {
   // read 80 bytes from internal flash
   uint8_t buf[memoryMapLength];
   readFlash(buf,memoryMapLength);
@@ -61,31 +61,31 @@ void loadConfig(ControllerConfig cConfig, bool setDefault) {
     applyConfig(buf, cConfig);
   }
 }
-void applyConfig(uint8_t *conf, ControllerConfig cConfig) {
+void applyConfig(uint8_t* conf, ControllerConfig* cConfig) {
   // take the config in a buffer and apply it to the device
   // this means you could load from RAM or just go straight from sysex.
 
-  cConfig.powerLed = conf[0];
-  cConfig.midiLed = conf[1];
-  cConfig.rotated = conf[2];
-  cConfig.i2cLeader = conf[3];
-  cConfig.midiThru = conf[8];
+  cConfig->powerLed = conf[0];
+  cConfig->midiLed = conf[1];
+  cConfig->rotated = conf[2];
+  cConfig->i2cLeader = conf[3];
+  cConfig->midiThru = conf[8];
 
   for (uint8_t i = 0; i < 16; i++)
   {
-    cConfig.usbMidiChannels[i] = conf[16+i];
+    cConfig->usbMidiChannels[i] = conf[16+i];
   }
   for (uint8_t i = 0; i < 16; i++)
   {
-    cConfig.trsMidiChannels[i] = conf[32+i];
+    cConfig->trsMidiChannels[i] = conf[32+i];
   }
   for (uint8_t i = 0; i < 16; i++)
   {
-    cConfig.usbCCs[i] = conf[48+i];
+    cConfig->usbCCs[i] = conf[48+i];
   }
   for (uint8_t i = 0; i < 16; i++)
   {
-    cConfig.trsCCs[i] = conf[64+i];
+    cConfig->trsCCs[i] = conf[64+i];
   }
 }
 
