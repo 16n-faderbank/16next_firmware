@@ -37,9 +37,11 @@ uint8_t sysexBuffer[128]; // 128 bytes to store incoming sysex in
 bool isReadingSysex = false;
 uint8_t sysexOffset = 0; // where in the buffer we start writing to.
 
-const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15}; // this faders to Mux positions, ie,
-                                  // fader 6 is on mux input 0,
-                                  // fader 4 is on mux input 1
+// this maps faders to Mux positions, ie,
+// fader 6 is on mux input 0,
+// fader 4 is on mux input 1
+const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15};
+
 int previousValues[16];
 int i2cData[16];
 int muxMask;
@@ -334,10 +336,10 @@ static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
   case I2C_SLAVE_REQUEST: // master is requesting data
     // received an i2c read request
 
-    // get and cast the value
+    // get the appropriate value
     shiftReady = i2cData[activeInput];
 
-    // send the puppy as a pair of bytes
+    // send the puppy as MSB/LSB
     i2c_write_byte_raw(i2c, shiftReady >> 8);
     i2c_write_byte_raw(i2c, shiftReady & 255);
     break;
