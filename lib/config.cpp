@@ -1,6 +1,32 @@
 #include "config.h"
 #include "flash_onboard.h"
 
+const uint8_t memoryMapLength = 80;
+
+// default memorymap
+// | Address | Format |            Description             |
+// |---------|--------|------------------------------------|
+// | 0       | 0/1    | LED on when powered                |
+// | 1       | 0/1    | LED blink on MIDI data             |
+// | 2       | 0/1    | Rotate controller outputs via 180º |
+// | 3       | 0/1    | I2C Master/Follower                |
+// | 4,5     | 0-127  | FADERMIN lsb/msb                   |
+// | 6,7     | 0-127  | FADERMAX lsb/msb                   |
+// | 8       | 0/1    | Soft MIDI thru (default 0)         |
+// | 9-15    |        | Currently unused                   |
+// | 16-31   | 1-16   | Channel for each control (USB)     |
+// | 32-47   | 1-16   | Channel for each control (TRS)     |
+// | 48-63   | 0-127  | CC for each control (USB)          |
+// | 64-79   | 0-127  | CC for each control (TRS)          |
+uint8_t defaultMemoryMap[] = {
+  0,1,0,1,0,0,0,0, // 0-7
+  0,0,0,0,0,0,0,0, // 8-15
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
+  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
+  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
+};
+
 void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, ControllerConfig cConfig) {
   // OK:
   uint8_t newMemoryMap[memoryMapLength];
