@@ -268,7 +268,7 @@ void updateControls(bool force) {
       // store the current value of the fader in this block
       // for i2c purposes
       if(controller.rotated) {
-        i2cData[i] = 4095 - analog[FADER_COUNT+16-i]->getValue();
+        i2cData[i] = 4095 - analog[FADER_COUNT-1-i]->getValue();
       } else {
         i2cData[i] =analog[i]->getValue();
       }
@@ -279,7 +279,7 @@ void updateControls(bool force) {
         previousValues[i] = outputValue;
         uint8_t controllerIndex = i; // TODO is this right?
         if(controller.rotated) {
-          controllerIndex = FADER_COUNT + 15 - i;
+          controllerIndex = FADER_COUNT - 1 - i;
           outputValue = 127-outputValue;
         }
 
