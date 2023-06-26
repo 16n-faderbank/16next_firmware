@@ -61,7 +61,7 @@ void sendToAllI2C(uint8_t channel, uint16_t value) {
 
   // ANSIBLE
   if(ansiblePresent) {
-    sendi2c(0x20, device << 1, 0x06, port, value);
+    sendi2c(ansibleI2Caddress, device << 1, 0x06, port, value);
   }
 }
 
@@ -82,8 +82,5 @@ void sendi2c(uint8_t model, uint8_t deviceIndex, uint8_t cmd, uint8_t devicePort
   messageBuffer[2] = valueTemp >> 8;
   messageBuffer[3] = valueTemp & 0xff;
 
-  // TODO
-  // Wire.beginTransmission(model + deviceIndex);
-  // Wire.write(messageBuffer, 4);
-  // Wire.endTransmission();
+  i2c_write_blocking(i2c1, model + deviceIndex, messageBuffer, 4, false);
 }
