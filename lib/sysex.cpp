@@ -35,7 +35,6 @@ void sendCurrentConfig() {
 
   // ... and the first 80 bytes of the external data
   for (uint8_t i = 0; i < memoryMapLength; i++) {
-    // TODO: remove default Memory Map, read from memory
     currentConfigData[i+4] = buf[i];
   }
 

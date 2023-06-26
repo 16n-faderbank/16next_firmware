@@ -18,7 +18,6 @@ add_executable(${target_proj}
   16next.cpp
 )
 
-# TODO does this work?
 target_sources(${target_proj}
   PRIVATE
   lib/config.cpp

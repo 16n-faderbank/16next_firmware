@@ -2,8 +2,6 @@
 
 ## TODO
 
-* enable TRS SPI1
-
 ## DONE
 
 * fixup memory map
@@ -24,6 +22,7 @@
 * enable TRS MIDI
 * port to onboard flash from EEPROM
 * enable Midi THRU
+* TRS I2C
 
 
 ## TRS MIDI Notes

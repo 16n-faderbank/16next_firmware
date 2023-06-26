@@ -105,11 +105,7 @@ int main() {
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  // TODO ok this is bugged.
-  // we should check something is up here
-
   if(controller.i2cLeader) {
-    // TODO: configure I2C master/leader
     i2c_init(i2c1, I2C_BAUDRATE);
     scanI2Cbus();
   } else {
