@@ -11,12 +11,34 @@
 
 #define FADER_COUNT 16
 
+// define the board type here:
+// SIXTEEN_RX = 16rx
+// SIXTEEN_NX = 16nx
+// SIXTEEN_NEXT_DEV_BOARD = 16next dev board
+#define SIXTEEN_RX 1
+
+#ifdef SIXTEEN_NEXT_DEV_BOARD
 #define FIRST_MUX_PIN 18
 #define MUX_PIN_COUNT 4 
 #define ADC_PIN 26
 #define INTERNAL_LED_PIN 22
 #define I2C_SDA_PIN 10
 #define I2C_SCL_PIN 11
+#elif SIXTEEN_RX
+#define FIRST_MUX_PIN 18
+#define MUX_PIN_COUNT 4 
+#define ADC_PIN 26
+#define INTERNAL_LED_PIN 2
+#define I2C_SDA_PIN 10
+#define I2C_SCL_PIN 11
+#elif SIXTEEN_NX
+#define FIRST_MUX_PIN 18
+#define MUX_PIN_COUNT 4 
+#define ADC_PIN 26
+#define INTERNAL_LED_PIN 2
+#define I2C_SDA_PIN 10
+#define I2C_SCL_PIN 11
+#endif
 
 // I2C Address for Faderbank. 0x34 unless you ABSOLUTELY know what you are doing.
 #define I2C_ADDRESS 0x34
