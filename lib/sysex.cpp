@@ -28,7 +28,7 @@ void sendCurrentConfig() {
   readFlash(buf,80);
 
   // build a message from the version number...
-  currentConfigData[0] = 0x04; // 0x04 == 16next device id
+  currentConfigData[0] = DEVICE_INDEX;
   currentConfigData[1] = FIRMWARE_VERSION_MAJOR;
   currentConfigData[2] = FIRMWARE_VERSION_MINOR;
   currentConfigData[3] = FIRMWARE_VERSION_POINT;
