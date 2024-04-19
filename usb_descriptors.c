@@ -139,7 +139,7 @@ char const* string_desc_arr [] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
   "Oxion",    // 1: Manufacturer
-  "16next",   // 2: Product
+  "16nx", // 2: Product (set in CMake)
   boardId     // 3: Serial number derived from ID of flash RAM
 };
 
