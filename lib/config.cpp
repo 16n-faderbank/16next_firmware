@@ -9,7 +9,7 @@ const uint8_t memoryMapLength = 80;
 // | 0       | 0/1    | LED on when powered                |
 // | 1       | 0/1    | LED blink on MIDI data             |
 // | 2       | 0/1    | Rotate controller outputs via 180º |
-// | 3       | 0/1    | I2C Master/Follower                |
+// | 3       | 0/1    | I2C Follower/Leader                |
 // | 4,5     | 0-127  | FADERMIN lsb/msb                   |
 // | 6,7     | 0-127  | FADERMAX lsb/msb                   |
 // | 8       | 0/1    | Soft MIDI thru (default 0)         |
@@ -19,7 +19,7 @@ const uint8_t memoryMapLength = 80;
 // | 48-63   | 0-127  | CC for each control (USB)          |
 // | 64-79   | 0-127  | CC for each control (TRS)          |
 uint8_t defaultMemoryMap[] = {
-  0,1,0,1,0,0,0,0, // 0-7
+  0,1,0,0,0,0,0,0, // 0-7
   0,0,0,0,0,0,0,0, // 8-15
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
