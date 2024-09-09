@@ -18,16 +18,16 @@ const uint8_t memoryMapLength = 80;
 // | 32-47   | 1-16   | Channel for each control (TRS)     |
 // | 48-63   | 0-127  | CC for each control (USB)          |
 // | 64-79   | 0-127  | CC for each control (TRS)          |
-uint8_t defaultMemoryMap[] = {
-  0,1,0,0,0,0,0,0, // 0-7
-  0,0,0,0,0,0,0,0, // 8-15
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 16-31
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 32-47
-  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
-  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 // 64-79
+uint8_t defaultMemoryMap[]    = {
+    0, 1, 0, 0, 0, 0, 0, 0,                                         // 0-7
+    0, 0, 0, 0, 0, 0, 0, 0,                                         // 8-15
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                 // 16-31
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                 // 32-47
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, // 48-63
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47  // 64-79
 };
 
-void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength, ControllerConfig* cConfig) {
+void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, ControllerConfig *cConfig) {
   // OK:
   uint8_t newMemoryMap[memoryMapLength];
 
@@ -47,10 +47,10 @@ void updateConfig(uint8_t* incomingSysex, uint8_t incomingSysexLength, Controlle
   applyConfig(newMemoryMap, cConfig);
 }
 
-void loadConfig(ControllerConfig* cConfig, bool setDefault) {
+void loadConfig(ControllerConfig *cConfig, bool setDefault) {
   // read 80 bytes from internal flash
   uint8_t buf[memoryMapLength];
-  readFlash(buf,memoryMapLength);
+  readFlash(buf, memoryMapLength);
   // if the 2nd byte is unwritten, that means we should write the default
   // settings to flash
   if (setDefault && (buf[1] == 0xFF)) {
@@ -61,36 +61,32 @@ void loadConfig(ControllerConfig* cConfig, bool setDefault) {
     applyConfig(buf, cConfig);
   }
 }
-void applyConfig(uint8_t* conf, ControllerConfig* cConfig) {
+void applyConfig(uint8_t *conf, ControllerConfig *cConfig) {
   // take the config in a buffer and apply it to the device
   // this means you could load from RAM or just go straight from sysex.
 
-  cConfig->powerLed = conf[0];
-  cConfig->midiLed = conf[1];
-  cConfig->rotated = conf[2];
+  cConfig->powerLed  = conf[0];
+  cConfig->midiLed   = conf[1];
+  cConfig->rotated   = conf[2];
   cConfig->i2cLeader = conf[3];
-  cConfig->midiThru = conf[8];
+  cConfig->midiThru  = conf[8];
 
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    cConfig->usbMidiChannels[i] = conf[16+i];
+  for (uint8_t i = 0; i < 16; i++) {
+    cConfig->usbMidiChannels[i] = conf[16 + i];
   }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    cConfig->trsMidiChannels[i] = conf[32+i];
+  for (uint8_t i = 0; i < 16; i++) {
+    cConfig->trsMidiChannels[i] = conf[32 + i];
   }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    cConfig->usbCCs[i] = conf[48+i];
+  for (uint8_t i = 0; i < 16; i++) {
+    cConfig->usbCCs[i] = conf[48 + i];
   }
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    cConfig->trsCCs[i] = conf[64+i];
+  for (uint8_t i = 0; i < 16; i++) {
+    cConfig->trsCCs[i] = conf[64 + i];
   }
 }
 
-void saveConfig(uint8_t * config) {
-  writeFlash(config,memoryMapLength);
+void saveConfig(uint8_t *config) {
+  writeFlash(config, memoryMapLength);
 }
 
 void setDefaultConfig() {

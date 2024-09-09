@@ -5,13 +5,13 @@
  * Tom Armitage [tom@infovore.org]
  */
 
+#include <stdio.h>
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "pico/binary_info.h"
 #include "pico/i2c_slave.h"
 #include "pico/stdlib.h"
-#include <stdio.h>
 
 #include "bsp/board.h"
 #include "midi_uart_lib.h"
@@ -26,7 +26,7 @@
 
 absolute_time_t updateControlsAt;
 absolute_time_t midiActivityLightOffAt;
-bool midiActivity = false;
+bool midiActivity            = false;
 
 bool shouldSendControlUpdate = false;
 absolute_time_t sendForcedUpdateAt;
@@ -34,19 +34,19 @@ absolute_time_t sendForcedUpdateAt;
 ControllerConfig controller; // struct to hold controller config
 
 uint8_t sysexBuffer[128]; // 128 bytes to store incoming sysex in
-bool isReadingSysex = false;
-uint8_t sysexOffset = 0; // where in the buffer we start writing to.
+bool isReadingSysex     = false;
+uint8_t sysexOffset     = 0; // where in the buffer we start writing to.
 
 // this maps faders to Mux positions, ie,
 // fader 6 is on mux input 0,
 // fader 4 is on mux input 1
-const int faderLookup[] = {7,6,5,4,3,2,1,0,8,9,10,11,12,13,14,15};
+const int faderLookup[] = {7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 13, 14, 15};
 
 int previousValues[16];
 int i2cData[16];
 int muxMask;
 
-ResponsiveAnalogRead *analog[FADER_COUNT];  // array of filters to smooth analog read.
+ResponsiveAnalogRead *analog[FADER_COUNT]; // array of filters to smooth analog read.
 
 static void *midi_uart_instance;
 
@@ -63,7 +63,7 @@ int main() {
 
   loadConfig(&controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
-  if(controller.i2cLeader) {
+  if (controller.i2cLeader) {
     sleep_ms(BOOTDELAY);
   }
 
@@ -105,7 +105,7 @@ int main() {
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  if(controller.i2cLeader) {
+  if (controller.i2cLeader) {
     i2c_init(i2c1, I2C_BAUDRATE);
     scanI2Cbus();
   } else {
@@ -127,17 +127,17 @@ int main() {
     tud_task();
     midi_read_task();
 
-    if(controller.powerLed)   {
+    if (controller.powerLed) {
       gpio_put(INTERNAL_LED_PIN, true);
     } else {
       gpio_put(INTERNAL_LED_PIN, controller.midiLed && midiActivity);
     }
 
-    if(absolute_time_diff_us(midiActivityLightOffAt, get_absolute_time()) > 0) {
+    if (absolute_time_diff_us(midiActivityLightOffAt, get_absolute_time()) > 0) {
       midiActivity = false;
     }
 
-    if(shouldSendControlUpdate && absolute_time_diff_us(sendForcedUpdateAt, get_absolute_time()) > 0) {
+    if (shouldSendControlUpdate && absolute_time_diff_us(sendForcedUpdateAt, get_absolute_time()) > 0) {
       // we've received a sysex "give me your config request" recently
       // so we should send the state of all controls whether they've changed
       // or not
@@ -171,17 +171,17 @@ void midi_read_task() {
   while (tud_midi_available()) {
     streamLength = tud_midi_stream_read(inputBuffer, MIDI_INPUT_BUFFER);
     // if it's not clock...
-    if(inputBuffer[0] != 0xF8) {
-      midiActivity = true;
+    if (inputBuffer[0] != 0xF8) {
+      midiActivity           = true;
       midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
     }
   }
 
-  if(isReadingSysex) {
+  if (isReadingSysex) {
     // keep doing sysex stuff
     bool sysexComplete = copySysexStreamToBuffer(sysexBuffer, inputBuffer, streamLength, sysexOffset);
 
-    if(sysexComplete) {
+    if (sysexComplete) {
       // we saw an 0xF7, sysex is over, time to process
       processSysexBuffer();
     } else {
@@ -198,16 +198,16 @@ void midi_read_task() {
 
     // start the process of reading it
     isReadingSysex = true;
-    sysexOffset = 0;
+    sysexOffset    = 0;
 
     // blank the buffer;
-    for(uint8_t i = 0; i < 128; i++) {
+    for (uint8_t i = 0; i < 128; i++) {
       sysexBuffer[i] = 0x00;
     }
 
     bool sysexComplete = copySysexStreamToBuffer(sysexBuffer, inputBuffer, streamLength, sysexOffset);
 
-    if(sysexComplete) {
+    if (sysexComplete) {
       // we saw an 0xF7, sysex is over, time to process
       processSysexBuffer();
     } else {
@@ -220,8 +220,8 @@ void midi_read_task() {
   // END SYSEX HANDLER
 
   // if it's not sysex, forward it thru to midi TRS if relevant.
-  if(controller.midiThru) {
-    midi_uart_write_tx_buffer(midi_uart_instance,inputBuffer,streamLength);
+  if (controller.midiThru) {
+    midi_uart_write_tx_buffer(midi_uart_instance, inputBuffer, streamLength);
   }
 }
 
@@ -233,7 +233,7 @@ void processSysexBuffer() {
     // 0x1F == tell me your 1nFo
     sendCurrentConfig();
     shouldSendControlUpdate = true;
-    sendForcedUpdateAt = make_timeout_time_ms(100);
+    sendForcedUpdateAt      = make_timeout_time_ms(100);
     break;
   case 0x0E:
     // 0x0E == c0nfig Edit
@@ -248,7 +248,7 @@ void processSysexBuffer() {
 }
 
 void updateControls(bool force) {
-  if(force) {
+  if (force) {
     // "force" only happens when connecting via sysex initially
     // ie, it's for the 'first load' of the editor. So we can lock up for 1ms.
     busy_wait_us(1000);
@@ -262,48 +262,51 @@ void updateControls(bool force) {
     busy_wait_us(10); // wait for mux pins to swap
 
     uint16_t rawAdcValue = adc_read();
+#ifdef INVERT_ADC
+    rawAdcValue = 4095 - rawAdcValue;
+#endif
     analog[i]->update(rawAdcValue);
 
     if (analog[i]->hasChanged() || force) {
-      if(force) {
+      if (force) {
         // if we're being asked to update all our values, we _really_ would like a read, please.
         analog[i]->update(rawAdcValue);
       }
 
       // store the current value of the fader in this block
       // for i2c purposes
-      if(controller.rotated) {
-        i2cData[i] = 4095 - analog[FADER_COUNT-1-i]->getValue();
+      if (controller.rotated) {
+        i2cData[i] = 4095 - analog[FADER_COUNT - 1 - i]->getValue();
       } else {
-        i2cData[i] =analog[i]->getValue();
+        i2cData[i] = analog[i]->getValue();
       }
 
       // test the scaled version against the previous CC.
       uint8_t outputValue = analog[i]->getValue() >> 5;
       if ((outputValue != previousValues[i]) || force) {
-        previousValues[i] = outputValue;
+        previousValues[i]       = outputValue;
         uint8_t controllerIndex = i; // TODO is this right?
-        if(controller.rotated) {
+        if (controller.rotated) {
           controllerIndex = FADER_COUNT - 1 - i;
-          outputValue = 127-outputValue;
+          outputValue     = 127 - outputValue;
         }
 
         // Send CC on appropriate USB channel
-        uint8_t cc[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex]-1), controller.usbCCs[controllerIndex],
-                         outputValue};
+        uint8_t cc[3]     = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex],
+                             outputValue};
         uint8_t cable_num = 0;
         tud_midi_stream_write(cable_num, cc, 3);
 
         // Send CC on appropriate TRS channel
-        uint8_t trs_cc[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex]-1), controller.trsCCs[controllerIndex], outputValue};
+        uint8_t trs_cc[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex] - 1), controller.trsCCs[controllerIndex], outputValue};
         // tud_midi_stream_write(cable_num, cc, 3);
-        midi_uart_write_tx_buffer(midi_uart_instance,trs_cc,3);
+        midi_uart_write_tx_buffer(midi_uart_instance, trs_cc, 3);
 
-        midiActivity = true;
+        midiActivity           = true;
         midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);
       }
 
-      if(controller.i2cLeader) {
+      if (controller.i2cLeader) {
         sendToAllI2C(i, i2cData[i]);
       }
     }
@@ -321,10 +324,10 @@ static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
   case I2C_SLAVE_RECEIVE: // master has written some data
     // parse the response
     activeInput = i2c_read_byte_raw(i2c);
-    if(activeInput < 0) {
+    if (activeInput < 0) {
       activeInput = 0;
     }
-    if(activeInput > FADER_COUNT-1) {
+    if (activeInput > FADER_COUNT - 1) {
       activeInput = FADER_COUNT - 1;
     }
 

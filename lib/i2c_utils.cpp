@@ -1,20 +1,19 @@
-#include <pico/stdlib.h>
 #include <pico/stdio.h>
+#include <pico/stdlib.h>
 #include "hardware/i2c.h"
 
 #include "i2c_utils.h"
 
-uint8_t device = 0;
-uint8_t port = 0;
+uint8_t device              = 0;
+uint8_t port                = 0;
 
 // master i2c specific stuff
 const int ansibleI2Caddress = 0x20;
-const int er301I2Caddress = 0x31;
-const int txoI2Caddress = 0x60;
-bool er301Present = false;
-bool ansiblePresent = false;
-bool txoPresent = false;
-
+const int er301I2Caddress   = 0x31;
+const int txoI2Caddress     = 0x60;
+bool er301Present           = false;
+bool ansiblePresent         = false;
+bool txoPresent             = false;
 
 // enumerate over all things on i2c bus. If they respond, set a flag
 void scanI2Cbus() {
@@ -46,21 +45,21 @@ void sendToAllI2C(uint8_t channel, uint16_t value) {
   // keeps the firmware simple :)
 
   // for 4 output devices
-  port = channel % 4;
+  port   = channel % 4;
   device = channel / 4;
 
   // TXo
-  if(txoPresent) {
+  if (txoPresent) {
     sendi2c(txoI2Caddress, device, 0x11, port, value);
   }
 
   // ER-301
-  if(er301Present) {
+  if (er301Present) {
     sendi2c(er301I2Caddress, 0, 0x11, channel, value);
   }
 
   // ANSIBLE
-  if(ansiblePresent) {
+  if (ansiblePresent) {
     sendi2c(ansibleI2Caddress, device << 1, 0x06, port, value);
   }
 }
@@ -69,8 +68,7 @@ void sendToAllI2C(uint8_t channel, uint16_t value) {
  * Sends an i2c command out to a slave when running in master mode
  */
 
-void sendi2c(uint8_t model, uint8_t deviceIndex, uint8_t cmd, uint8_t devicePort, int value)
-{
+void sendi2c(uint8_t model, uint8_t deviceIndex, uint8_t cmd, uint8_t devicePort, int value) {
 
   uint8_t messageBuffer[4];
   uint16_t valueTemp;
@@ -78,7 +76,7 @@ void sendi2c(uint8_t model, uint8_t deviceIndex, uint8_t cmd, uint8_t devicePort
   messageBuffer[0] = cmd;
   messageBuffer[1] = (uint8_t)devicePort;
 
-  valueTemp = (uint16_t)value;
+  valueTemp        = (uint16_t)value;
   messageBuffer[2] = valueTemp >> 8;
   messageBuffer[3] = valueTemp & 0xff;
 

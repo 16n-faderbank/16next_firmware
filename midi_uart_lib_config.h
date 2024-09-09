@@ -1,7 +1,7 @@
 /**
  * @file midi_uart_lib_config.h
  * @brief this file choses how many UARTs the midi_uart_lib library supports
- * 
+ *
  * MIT License
 
  * Copyright (c) 2022 rppicomidi
@@ -23,9 +23,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
-
 
 #ifndef MIDI_UART_LIB_CONFIG_H
 #define MIDI_UART_LIB_CONFIG_H

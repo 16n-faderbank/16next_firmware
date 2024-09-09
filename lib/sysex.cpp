@@ -1,16 +1,16 @@
 #include "sysex.h"
 
+#include "16next.h"
 #include "config.h"
 #include "flash_onboard.h"
-#include "16next.h"
 #include "tusb.h"
 
-bool copySysexStreamToBuffer(uint8_t* syxBuffer, uint8_t* inputBuffer, uint8_t streamLength, uint8_t runningOffset) {
+bool copySysexStreamToBuffer(uint8_t *syxBuffer, uint8_t *inputBuffer, uint8_t streamLength, uint8_t runningOffset) {
   bool sysexComplete = false;
 
-  for(uint8_t i = 0; i < streamLength; i++) {
-    syxBuffer[i+runningOffset] = inputBuffer[i];
-    if(inputBuffer[i] == 0xF7) {
+  for (uint8_t i = 0; i < streamLength; i++) {
+    syxBuffer[i + runningOffset] = inputBuffer[i];
+    if (inputBuffer[i] == 0xF7) {
       sysexComplete = true;
       break;
     }
@@ -25,7 +25,7 @@ void sendCurrentConfig() {
 
   // read 80 bytes from internal flash
   uint8_t buf[80];
-  readFlash(buf,80);
+  readFlash(buf, 80);
 
   // build a message from the version number...
   currentConfigData[0] = DEVICE_INDEX;
@@ -35,7 +35,7 @@ void sendCurrentConfig() {
 
   // ... and the first 80 bytes of the external data
   for (uint8_t i = 0; i < memoryMapLength; i++) {
-    currentConfigData[i+4] = buf[i];
+    currentConfigData[i + 4] = buf[i];
   }
 
   // send as sysex; 0x0F == c0nFig
@@ -53,18 +53,18 @@ void sendByteArrayAsSysex(uint8_t messageId, uint8_t *byteArray,
   outputMessage[3] = 0x00; // MFG byte 3
   outputMessage[4] = messageId;
   for (uint8_t i = 0; i < byteArrayLength; i++) {
-    uint8_t el = byteArray[i];
+    uint8_t el           = byteArray[i];
     outputMessage[i + 5] = el;
   }
   outputMessage[outputMessageLength - 1] = 0xF7; // end Sysex
 
   // how many chunks of 16 bytes is the message?
-  uint8_t chunks = (outputMessageLength / 16) + 1;
+  uint8_t chunks                         = (outputMessageLength / 16) + 1;
 
   // for each chunk
   for (uint8_t chunk = 0; chunk < chunks; chunk++) {
     // offset within outputMessage
-    uint8_t offset = chunk * 16;
+    uint8_t offset      = chunk * 16;
 
     uint8_t chunkLength = 16;
     uint8_t tempBuf[16];

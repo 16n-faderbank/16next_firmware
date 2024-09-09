@@ -1,7 +1,7 @@
 #pragma once
 
-#include <hardware/sync.h>
 #include <hardware/flash.h>
+#include <hardware/sync.h>
 
 #include <pico/stdio.h>
 #include <pico/stdlib.h>

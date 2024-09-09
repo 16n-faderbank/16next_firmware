@@ -26,12 +26,12 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
-#include <stdlib.h>
 
 class ResponsiveAnalogRead {
-public:
+  public:
   // pin - the GPIO pin to read
   // adc - the actual ADC input to read from
   // sleepEnable - enabling sleep will cause values to take less time to stop
@@ -43,17 +43,17 @@ public:
   //   responsive values more responsive but doing so may cause more noise to
   //   seep through if sleep is not enabled
 
-  ResponsiveAnalogRead(){}; // default constructor must be followed by call to
-                            // begin function
+  ResponsiveAnalogRead() {}; // default constructor must be followed by call to
+                             // begin function
   ResponsiveAnalogRead(int adc, bool sleepEnable, float snapMultiplier = 0.01) {
     begin(adc, sleepEnable, snapMultiplier);
   };
 
   void begin(int adc, bool sleepEnable, float snapMultiplier) {
-    int pin = 26 + adc; // RP2040 GPIO pins map to 26-29
+    int pin           = 26 + adc; // RP2040 GPIO pins map to 26-29
 
-    this->pin = pin;
-    this->adc = adc;
+    this->pin         = pin;
+    this->adc         = adc;
     this->sleepEnable = sleepEnable;
 
     adc_gpio_init(pin);
@@ -76,12 +76,20 @@ public:
     return sleeping;
   } // returns true if the algorithm is currently in sleeping mode
 
-  inline void enableSleep() { sleepEnable = true; }
-  inline void disableSleep() { sleepEnable = false; }
-  inline void enableEdgeSnap() { edgeSnapEnable = true; }
+  inline void enableSleep() {
+    sleepEnable = true;
+  }
+  inline void disableSleep() {
+    sleepEnable = false;
+  }
+  inline void enableEdgeSnap() {
+    edgeSnapEnable = true;
+  }
   // edge snap ensures that values at the edges of the spectrum (0 and 1023) can
   // be easily reached when sleep is enabled
-  inline void disableEdgeSnap() { edgeSnapEnable = false; }
+  inline void disableEdgeSnap() {
+    edgeSnapEnable = false;
+  }
   inline void setActivityThreshold(float newThreshold) {
     activityThreshold = newThreshold;
   }
@@ -94,7 +102,7 @@ public:
 
   float snapCurve(float x) {
     float y = 1.0 / (x + 1.0);
-    y = (1.0 - y) * 2.0;
+    y       = (1.0 - y) * 2.0;
     if (y > 1.0) {
       return 1.0;
     }
@@ -197,26 +205,26 @@ public:
     // calculating a responsive value based off it
 
   void update(int rawValueRead) {
-    rawValue = rawValueRead;
-    prevResponsiveValue = responsiveValue;
-    responsiveValue = getResponsiveValue(rawValue);
+    rawValue                  = rawValueRead;
+    prevResponsiveValue       = responsiveValue;
+    responsiveValue           = getResponsiveValue(rawValue);
     responsiveValueHasChanged = responsiveValue != prevResponsiveValue;
   } // updates the value accepting a value and
     // calculating a responsive value based off it
 
-private:
+  private:
   int pin;
   int adc;
   int analogResolution = 4096;
   float snapMultiplier;
   bool sleepEnable;
   float activityThreshold = 16.0;
-  bool edgeSnapEnable = true;
+  bool edgeSnapEnable     = true;
 
-  float smoothValue = 0.0;
+  float smoothValue       = 0.0;
   unsigned long lastActivityMS;
   float errorEMA = 0.0;
-  bool sleeping = false;
+  bool sleeping  = false;
 
   int rawValue;
   int responsiveValue;
