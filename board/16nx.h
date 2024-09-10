@@ -1,5 +1,5 @@
-#ifndef _BOARDS_16N_H
-#define _BOARDS_16N_H
+#ifndef _BOARDS_16NX_H
+#define _BOARDS_16NX_H
 
 // --- UART ---
 #ifndef PICO_DEFAULT_UART
@@ -14,7 +14,7 @@
 
 // --- LED ---
 #ifndef PICO_DEFAULT_LED_PIN
-#define PICO_DEFAULT_LED_PIN 22
+#define PICO_DEFAULT_LED_PIN 2
 #endif
 // no PICO_DEFAULT_WS2812_PIN
 

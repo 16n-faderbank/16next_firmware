@@ -85,6 +85,7 @@ Flashing the MCU will only delete user data _if_ the firmware is big enough to e
   - `flash_onboard.h/cpp` which implement storage of user data in Flash RAM
   - `i2c_utils.h/cpp` which contain functionality useful for I2C, particular Leader mode.
   - `sysex.h/cpp` which contains functions related to sysex data handling.
+- `board` contains a board definition for the 16nx hardware.
 
 ## MIDI notes
 
