@@ -1,5 +1,5 @@
 /**
- * 16Next P1 firmware
+ * 16Next firmware
  *
  * See README.md for pinout / circuit configuration
  * Tom Armitage [tom@infovore.org]

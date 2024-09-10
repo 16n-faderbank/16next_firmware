@@ -7,7 +7,7 @@
 uint8_t device              = 0;
 uint8_t port                = 0;
 
-// master i2c specific stuff
+// leader i2c specific stuff
 const int ansibleI2Caddress = 0x20;
 const int er301I2Caddress   = 0x31;
 const int txoI2Caddress     = 0x60;
@@ -65,7 +65,7 @@ void sendToAllI2C(uint8_t channel, uint16_t value) {
 }
 
 /*
- * Sends an i2c command out to a slave when running in master mode
+ * Sends an i2c command out to a slave when running in leader mode
  */
 
 void sendi2c(uint8_t model, uint8_t deviceIndex, uint8_t cmd, uint8_t devicePort, int value) {
