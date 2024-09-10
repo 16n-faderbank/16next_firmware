@@ -60,6 +60,10 @@ int main() {
 
   bi_decl(bi_1pin_with_name(INTERNAL_LED_PIN, "On-board LED"));
   bi_decl(bi_2pins_with_names(MIDI_UART_TX_GPIO, "MIDI UART TX", MIDI_UART_RX_GPIO, "MIDI UART RX"));
+  // for (uint8_t i = 0; i < MUX_PIN_COUNT; i++) {
+  // bi_decl(bi_1pin_with_name(FIRST_MUX_PIN + i, "Mux Pin"));
+  // }
+  bi_decl(bi_4pins_with_names(FIRST_MUX_PIN, "Mux Address Pin 0", FIRST_MUX_PIN + 1, "Mux Address Pin 1", FIRST_MUX_PIN + 2, "Mux Address Pin 2", FIRST_MUX_PIN + 3, "Mux Address Pin 3"));
 
   loadConfig(&controller, true); // load config from flash; write default config TO flash if byte 1 is 0xFF
 
