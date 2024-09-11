@@ -53,7 +53,7 @@ and then, from that directory:
 
 This will produce the file `./build/16next.uf2` which can be flashed to your 16nx board.
 
-## Flash Storage
+## Flash storage
 
 The RP2040 has no on-board flash memory whatsoever, and uses external flash RAM to store code. It also has no internal EEPROM. To save user data, we use the end of the onboard flash RAM.
 
@@ -101,7 +101,7 @@ When the device fails to detect an initial configuration (ie, the second byte of
 
 At any point, the default config can be restored by sending sysex message `0x1A` (for 1nitiAlize).
 
-## Internal LED
+## Internal LED
 
 There's an "internal" LED on a 16nx board, available at GPIO2. If `midiLed` is true in the controller config, this LED will flash on MIDI activity. If `powerLed` is true in the controller config, this LED will be on permanently.
 
