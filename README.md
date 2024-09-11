@@ -124,9 +124,19 @@ The user data stored in flash (and indeed, sent via sysex) has the following sha
 | 48-63   | 0-127  | CC for each control (USB)          |
 | 64-79   | 0-127  | CC for each control (TRS)          |
 
+## Debug connector
+
+A debug connector on the front of the board is a JST-SH connector breaking out ARM SWD (single-wire-debug) ready for connection to a [Pico Debug Probe][debugprobe]. This allows developers to use open-source debug tools (OpenOCD, [Cortex Debug](https://github.com/Marus/cortex-debug)) to debug the firmware in a more... pleasant manner than endless serial dumps.
+
 ## NB: picotool usage
 
 As an RP2040 developer, you might wish to flash a board without having to reach for a `BOOTSEL` or `RESET` button. Unfortunately, I've had no joy enabling the method `picotool` uses to force the board into `BOOTSEL` mode, as it requires the UART to be handled over USB, and we're already using UART for our MIDI out. So I recommend making a `BOOTSEL` button easily accessible on any board you'd like to use this firmware with.
+
+## 16next? 16nx? What's the difference
+
+I'm using _16next_ to refer to all next-gen, RP2040, 16n-style devices. It was the original name of the project. I'm separating out the firmware and hardware repositories because they move at different rates, and have their own releases.
+
+Also: it's highly likely that this firmware will run just fine on _multiple_ different boards. Given that, let's give it a more generic name.
 
 ## License
 
@@ -134,3 +144,4 @@ Licensed under the MIT License (MIT). See `LICENSE.md` for details.
 
 [trs_midi_lib]: https://github.com/rppicomidi/midi_uart_lib
 [rar]: https://github.com/dxinteractive/ResponsiveAnalogRead
+[debugprobe]: https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html
