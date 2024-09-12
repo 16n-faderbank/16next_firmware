@@ -9,7 +9,7 @@ A firmware for next-gen 16n devices, such as 16nx.
 - a device emitting monome-style I2C data over 3.5mm jack
 - 16 analogue 0-5Vish control voltage outputs.
 
-It is edited and managed via a web-based editor.
+It is edited and managed via a [web-based editor][editor].
 
 ## Firmware Version
 
@@ -87,7 +87,7 @@ Flashing the MCU will only delete user data _if_ the firmware is big enough to e
   - `sysex.h/cpp` which contains functions related to sysex data handling.
 - `board` contains a board definition for the 16nx hardware.
 
-## MIDI notes
+## MIDI details
 
 The device is edited from a web-based tool; this sends and receives data over MIDI system exclusive ("sysex") data; the spec is in `SYSEX_SPEC.md`.
 
@@ -100,6 +100,10 @@ The MIDI buffer is 64 bytes long for a low-speed device. As such, sysex messages
 When the device fails to detect an initial configuration (ie, the second byte of the storage ram is not `0xFF`) it overwrites it with the default config.
 
 At any point, the default config can be restored by sending sysex message `0x1A` (for 1nitiAlize).
+
+## Configuring 16nx
+
+16nx is configured by its [web-based editor][editor]. The editor sourcecode is [available here][editor-source].
 
 ## Internal LED
 
@@ -145,3 +149,5 @@ Licensed under the MIT License (MIT). See `LICENSE.md` for details.
 [trs_midi_lib]: https://github.com/rppicomidi/midi_uart_lib
 [rar]: https://github.com/dxinteractive/ResponsiveAnalogRead
 [debugprobe]: https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html
+[editor]: https://16n-faderbank.github.io/editor/
+[editor-source]: https://github.com/16n-faderbank/16n-editor
