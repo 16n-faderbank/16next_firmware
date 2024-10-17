@@ -13,7 +13,7 @@ It is edited and managed via a [web-based editor][editor].
 
 ## Firmware Version
 
-3.0.0
+3.0.1
 
 ## Introduction
 
