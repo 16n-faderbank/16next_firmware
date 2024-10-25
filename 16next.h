@@ -7,7 +7,7 @@
 
 #define FIRMWARE_VERSION_MAJOR 3
 #define FIRMWARE_VERSION_MINOR 0
-#define FIRMWARE_VERSION_POINT 2
+#define FIRMWARE_VERSION_POINT 3
 
 #define FADER_COUNT            16
 
@@ -43,6 +43,8 @@
 #define DEVICE_INDEX     5
 // #define INVERT_ADC 1// pots appear to be wired in reverse?
 #endif
+
+#define ADC_RESOLUTION      12
 
 // I2C Address for Faderbank. 0x34 unless you ABSOLUTELY know what you are doing.
 #define I2C_ADDRESS         0x34

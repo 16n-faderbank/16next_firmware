@@ -267,7 +267,7 @@ void updateControls(bool force) {
 
     uint16_t rawAdcValue = adc_read();
 #ifdef INVERT_ADC
-    rawAdcValue = 4095 - rawAdcValue;
+    rawAdcValue = (1 << ADC_RESOLUTION) - 1 - rawAdcValue;
 #endif
     analog[i]->update(rawAdcValue);
 
@@ -279,10 +279,12 @@ void updateControls(bool force) {
 
       // store the current value of the fader in this block
       // for i2c purposes
+      // i2c resolution is 14-bit on 16n.
+      // 16nx has a 12-bit max ADC, but we want compatibility with other
+      // scripts. And so bit shift by 2 to scale up to 14-bit data.:
+      i2cData[i] = analog[i]->getValue() << 2;
       if (controller.rotated) {
-        i2cData[i] = 4095 - analog[FADER_COUNT - 1 - i]->getValue();
-      } else {
-        i2cData[i] = analog[i]->getValue();
+        i2cData[i] = ((1 << 14) - 1) - i2cData[i];
       }
 
       // test the scaled version against the previous CC.
