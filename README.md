@@ -13,7 +13,7 @@ It is edited and managed via a [web-based editor][editor].
 
 ## Firmware Version
 
-3.0.3
+3.1.0
 
 ## Introduction
 
@@ -127,6 +127,12 @@ The user data stored in flash (and indeed, sent via sysex) has the following sha
 | 32-47   | 0-15   | Channel for each control (TRS)     |
 | 48-63   | 0-127  | CC for each control (USB)          |
 | 64-79   | 0-127  | CC for each control (TRS)          |
+| 80-82   | 0-127  | Booleans for high-res mode (USB)\* |
+| 83-85   | 0-127  | Booleans for high-res mode (TRS)\* |
+
+### High-res mode booleans
+
+Each controller can optionally operate in high res mode, sending 14-bit data as two CCs: an "MSB" (albeit 7-bits) on (CC), and an "LSB" (again, 7-bits) on (CC+32). We store this option as a boolean. Because Sysex data can only transmit 7-bits (0x00-0x7F), we need to store this inside three bytes of data. To keep things straightforward, we'll store the high-res mode for USB and TRS as two separate values, each requiring 3 7-bit values to describe.
 
 ## Debug connector
 

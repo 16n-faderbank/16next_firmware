@@ -42,7 +42,7 @@ uint8_t sysexOffset     = 0; // where in the buffer we start writing to.
 // fader 4 is on mux input 1
 const int faderLookup[] = {7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 13, 14, 15};
 
-int previousValues[16];
+uint16_t previousValues[16];
 int i2cData[16];
 int muxMask;
 
@@ -288,25 +288,59 @@ void updateControls(bool force) {
       }
 
       // test the scaled version against the previous CC.
-      uint8_t outputValue = analog[i]->getValue() >> 5;
-      if ((outputValue != previousValues[i]) || force) {
-        previousValues[i]       = outputValue;
-        uint8_t controllerIndex = i; // TODO is this right?
+      uint16_t usbOutputValue;
+      uint16_t trsOutputValue;
+      bool usbHighResolution = controller.usbHighResolution[i]; // TODO: also do for TRS
+      bool trsHighResolution = controller.trsHighResolution[i]; // TODO: also do for TRS
+
+      uint8_t usbOutputBits  = usbHighResolution ? 14 : 7;
+      uint8_t trsOutputBits  = trsHighResolution ? 14 : 7;
+
+      usbOutputValue         = usbHighResolution ? analog[i]->getValue() << 2 : analog[i]->getValue() >> 5;
+      trsOutputValue         = trsHighResolution ? analog[i]->getValue() << 2 : analog[i]->getValue() >> 5;
+
+      if ((usbOutputValue != previousValues[i]) || force) {
+        previousValues[i]       = usbOutputValue; // yes, I know USB is driving things.
+        uint8_t controllerIndex = i;
         if (controller.rotated) {
           controllerIndex = FADER_COUNT - 1 - i;
-          outputValue     = 127 - outputValue;
+          usbOutputValue  = ((1 << usbOutputBits) - 1) - usbOutputValue;
+          trsOutputValue  = ((1 << trsOutputBits) - 1) - trsOutputValue;
         }
 
         // Send CC on appropriate USB channel
-        uint8_t cc[3]     = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex],
-                             outputValue};
         uint8_t cable_num = 0;
-        tud_midi_stream_write(cable_num, cc, 3);
+        if (usbHighResolution) {
+          uint8_t msb          = (usbOutputValue >> 7) & 0x7F;
+          uint8_t lsb          = usbOutputValue & 0x7F;
 
-        // Send CC on appropriate TRS channel
-        uint8_t trs_cc[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex] - 1), controller.trsCCs[controllerIndex], outputValue};
-        // tud_midi_stream_write(cable_num, cc, 3);
-        midi_uart_write_tx_buffer(midi_uart_instance, trs_cc, 3);
+          uint8_t msbCCData[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex], msb};
+          uint8_t lsbCCData[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex] + 32, lsb};
+
+          tud_midi_stream_write(cable_num, msbCCData, 3);
+          tud_midi_stream_write(cable_num, lsbCCData, 3);
+        } else {
+          uint8_t ccData[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex],
+                               usbOutputValue};
+          tud_midi_stream_write(cable_num, ccData, 3);
+        }
+
+        // Send CC on appropiate TRS channel
+        // TODO: if TRS high resolution
+        if (trsHighResolution) {
+          uint8_t msb              = (trsOutputValue >> 7) & 0x7F;
+          uint8_t lsb              = trsOutputValue & 0x7F;
+
+          uint8_t trs_msbCCData[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex] - 1), controller.trsCCs[controllerIndex], msb};
+          uint8_t trs_lsbCCData[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex] - 1), controller.trsCCs[controllerIndex] + 32, lsb};
+          // tud_midi_stream_write(cable_num, cc, 3);
+          midi_uart_write_tx_buffer(midi_uart_instance, trs_msbCCData, 3);
+          midi_uart_write_tx_buffer(midi_uart_instance, trs_lsbCCData, 3);
+        } else {
+          uint8_t ccData[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex],
+                               trsOutputValue};
+          midi_uart_write_tx_buffer(midi_uart_instance, ccData, 3);
+        }
 
         midiActivity           = true;
         midiActivityLightOffAt = make_timeout_time_us(MIDI_BLINK_DURATION);

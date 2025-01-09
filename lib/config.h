@@ -18,6 +18,8 @@ struct ControllerConfig {
   uint8_t usbCCs[16];
   uint8_t trsMidiChannels[16];
   uint8_t trsCCs[16];
+  bool usbHighResolution[16];
+  bool trsHighResolution[16];
 };
 
 extern const uint8_t memoryMapLength;

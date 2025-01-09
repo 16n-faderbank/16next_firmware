@@ -23,9 +23,9 @@ void sendCurrentConfig() {
   uint8_t configDataLength = 4 + memoryMapLength;
   uint8_t currentConfigData[configDataLength];
 
-  // read 80 bytes from internal flash
-  uint8_t buf[80];
-  readFlash(buf, 80);
+  // read 86 bytes from internal flash
+  uint8_t buf[86];
+  readFlash(buf, 86);
 
   // build a message from the version number...
   currentConfigData[0] = DEVICE_INDEX;
@@ -33,7 +33,7 @@ void sendCurrentConfig() {
   currentConfigData[2] = FIRMWARE_VERSION_MINOR;
   currentConfigData[3] = FIRMWARE_VERSION_POINT;
 
-  // ... and the first 80 bytes of the external data
+  // ... and the first 86 bytes of the external data
   for (uint8_t i = 0; i < memoryMapLength; i++) {
     currentConfigData[i + 4] = buf[i];
   }
