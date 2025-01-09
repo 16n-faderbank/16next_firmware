@@ -22,7 +22,6 @@ struct ControllerConfig {
   bool trsHighResolution[16];
 };
 
-extern const uint8_t memoryMapLength;
 extern uint8_t defaultMemoryMap[];
 
 void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, ControllerConfig *cConfig);

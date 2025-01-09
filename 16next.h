@@ -11,6 +11,8 @@
 
 #define FADER_COUNT            16
 
+#define MEMORY_MAP_LENGTH      86
+
 // define the board type here:
 // SIXTEEN_RX = 16rx
 // SIXTEEN_NX = 16nx

@@ -1,7 +1,6 @@
 #include "config.h"
+#include "16next.h"
 #include "flash_onboard.h"
-
-const uint8_t memoryMapLength = 86;
 
 // default memorymap
 // | Address | Format |            Description             |
@@ -20,7 +19,7 @@ const uint8_t memoryMapLength = 86;
 // | 64-79   | 0-127  | CC for each control (TRS)          |
 // | 80-82   | 0-127  | Booleans for high-res mode (USB)   |
 // | 83-85   | 0-127  | Booleans for high-res mode (TRS)   |
-uint8_t defaultMemoryMap[]    = {
+uint8_t defaultMemoryMap[] = {
     0, 1, 0, 0, 0, 0, 0, 0,                                         // 0-7
     0, 0, 0, 0, 0, 0, 0, 0,                                         // 8-15
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                 // 16-31
@@ -33,14 +32,14 @@ uint8_t defaultMemoryMap[]    = {
 
 void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, ControllerConfig *cConfig) {
   // OK:
-  uint8_t newMemoryMap[memoryMapLength];
+  uint8_t newMemoryMap[MEMORY_MAP_LENGTH];
 
   // 1) read the data that's just come in, and extract the 86 bytes of memory
   // to a variable we offset by five to strip: SYSEX_START,MFG0,MFG1,MFG2,MSG
   // and then also to strip
   // * device ID
   // * firmware MAJ/Min/POINT
-  for (uint8_t i = 0; i < memoryMapLength; i++) {
+  for (uint8_t i = 0; i < MEMORY_MAP_LENGTH; i++) {
     newMemoryMap[i] = incomingSysex[i + 9];
   }
 
@@ -53,8 +52,8 @@ void updateConfig(uint8_t *incomingSysex, uint8_t incomingSysexLength, Controlle
 
 void loadConfig(ControllerConfig *cConfig, bool setDefault) {
   // read 86 bytes from internal flash
-  uint8_t buf[memoryMapLength];
-  readFlash(buf, memoryMapLength);
+  uint8_t buf[MEMORY_MAP_LENGTH];
+  readFlash(buf, MEMORY_MAP_LENGTH);
   // if the 2nd byte is unwritten, that means we should write the default
   // settings to flash
   if (setDefault && (buf[1] == 0xFF)) {
@@ -104,7 +103,7 @@ void applyConfig(uint8_t *conf, ControllerConfig *cConfig) {
 }
 
 void saveConfig(uint8_t *config) {
-  writeFlash(config, memoryMapLength);
+  writeFlash(config, MEMORY_MAP_LENGTH);
 }
 
 void setDefaultConfig() {

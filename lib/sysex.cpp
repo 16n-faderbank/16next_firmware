@@ -20,12 +20,12 @@ bool copySysexStreamToBuffer(uint8_t *syxBuffer, uint8_t *inputBuffer, uint8_t s
 
 void sendCurrentConfig() {
   // current Data length = memory + 3 bytes for firmware version + 1 byte for device ID
-  uint8_t configDataLength = 4 + memoryMapLength;
+  uint8_t configDataLength = 4 + MEMORY_MAP_LENGTH;
   uint8_t currentConfigData[configDataLength];
 
   // read 86 bytes from internal flash
-  uint8_t buf[86];
-  readFlash(buf, 86);
+  uint8_t buf[MEMORY_MAP_LENGTH];
+  readFlash(buf, MEMORY_MAP_LENGTH);
 
   // build a message from the version number...
   currentConfigData[0] = DEVICE_INDEX;
@@ -34,7 +34,7 @@ void sendCurrentConfig() {
   currentConfigData[3] = FIRMWARE_VERSION_POINT;
 
   // ... and the first 86 bytes of the external data
-  for (uint8_t i = 0; i < memoryMapLength; i++) {
+  for (uint8_t i = 0; i < MEMORY_MAP_LENGTH; i++) {
     currentConfigData[i + 4] = buf[i];
   }
 
