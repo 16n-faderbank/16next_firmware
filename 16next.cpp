@@ -271,6 +271,12 @@ void updateControls(bool force) {
 #endif
     analog[i]->update(rawAdcValue);
 
+    uint8_t controllerIndex = i;
+
+    if (controller.rotated) {
+      controllerIndex = FADER_COUNT - 1 - i;
+    }
+
     if (analog[i]->hasChanged() || force) {
       if (force) {
         // if we're being asked to update all our values, we _really_ would like a read, please.
@@ -290,8 +296,8 @@ void updateControls(bool force) {
       // test the scaled version against the previous CC.
       uint16_t usbOutputValue;
       uint16_t trsOutputValue;
-      bool usbHighResolution = controller.usbHighResolution[i]; // TODO: also do for TRS
-      bool trsHighResolution = controller.trsHighResolution[i]; // TODO: also do for TRS
+      bool usbHighResolution = controller.rotated ? controller.usbHighResolution[controllerIndex] : controller.usbHighResolution[controllerIndex];
+      bool trsHighResolution = controller.rotated ? controller.trsHighResolution[controllerIndex] : controller.trsHighResolution[controllerIndex];
 
       uint8_t usbOutputBits  = usbHighResolution ? 14 : 7;
       uint8_t trsOutputBits  = trsHighResolution ? 14 : 7;
@@ -300,12 +306,11 @@ void updateControls(bool force) {
       trsOutputValue         = trsHighResolution ? analog[i]->getValue() << 2 : analog[i]->getValue() >> 5;
 
       if ((usbOutputValue != previousValues[i]) || force) {
-        previousValues[i]       = usbOutputValue; // yes, I know USB is driving things.
-        uint8_t controllerIndex = i;
+        previousValues[i] = usbOutputValue; // yes, I know USB is driving things.
+
         if (controller.rotated) {
-          controllerIndex = FADER_COUNT - 1 - i;
-          usbOutputValue  = ((1 << usbOutputBits) - 1) - usbOutputValue;
-          trsOutputValue  = ((1 << trsOutputBits) - 1) - trsOutputValue;
+          usbOutputValue = ((1 << usbOutputBits) - 1) - usbOutputValue;
+          trsOutputValue = ((1 << trsOutputBits) - 1) - trsOutputValue;
         }
 
         // Send CC on appropriate USB channel
