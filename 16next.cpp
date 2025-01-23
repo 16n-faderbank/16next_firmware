@@ -92,9 +92,9 @@ int main() {
 
   // setup analog read buckets
   for (int i = 0; i < FADER_COUNT; i++) {
-    analog[i] = new ResponsiveAnalogRead(0, true, .0001);
-    analog[i]->setActivityThreshold(32);
-    analog[i]->enableEdgeSnap();
+    analog[i] = new ResponsiveAnalogRead(0, true, .05);
+    analog[i]->setActivityThreshold(16);
+    // analog[i]->enableEdgeSnap();
   }
 
   // set up I2C on jack
