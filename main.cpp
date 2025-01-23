@@ -17,12 +17,12 @@
 #include "midi_uart_lib.h"
 #include "tusb.h"
 
-#include "16next.h"
 #include "lib/ResponsiveAnalogRead.hpp"
 #include "lib/config.h"
 #include "lib/flash_onboard.h"
 #include "lib/i2c_utils.h"
 #include "lib/sysex.h"
+#include "main.h"
 
 absolute_time_t updateControlsAt;
 absolute_time_t midiActivityLightOffAt;

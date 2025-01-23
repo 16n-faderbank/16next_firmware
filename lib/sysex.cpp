@@ -1,8 +1,8 @@
 #include "sysex.h"
 
-#include "16next.h"
 #include "config.h"
 #include "flash_onboard.h"
+#include "main.h"
 #include "tusb.h"
 
 bool copySysexStreamToBuffer(uint8_t *syxBuffer, uint8_t *inputBuffer, uint8_t streamLength, uint8_t runningOffset) {

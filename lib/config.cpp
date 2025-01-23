@@ -1,6 +1,6 @@
 #include "config.h"
-#include "16next.h"
 #include "flash_onboard.h"
+#include "main.h"
 
 // default memorymap
 // | Address | Format |            Description             |

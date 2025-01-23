@@ -75,8 +75,8 @@ Flashing the MCU will only delete user data _if_ the firmware is big enough to e
 
 ## Code layout
 
-- `16next.cpp` is our main entry point and executable. Most code is in here.
-- `16next.h` is effectively a configuration file for that.
+- `main.cpp` is our main entry point and executable. Most code is in here.
+- `main.h` is effectively a configuration file for that.
 - `midi_uart_lib_config.h` configures the library we use for TRS MIDI over the UART pins.
 - `tusb_config.h` and `usb_descriptors.h` configure TinyUSB, used for MIDI.
 - `lib` contains:
