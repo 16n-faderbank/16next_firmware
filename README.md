@@ -23,6 +23,16 @@ The firmware is written for the Raspberry Pi RP2040 chip; the 16nx board itself 
 
 It's coded in Pico SDK (raw C++); it does _not_ use Arduino (unlike the previous firmware). This is largely owing to when it was begun, and the state of the Arduino core - and also the author's preference for it.
 
+> **Important note on upgrading from < 3.1.0 to 3.1.0+**
+>
+> If you are upgrading from a device that has already had a pre-3.1.0 firmware installed on it, you will **need** to head to the [editor][editor] immediately and edit your configuration; _some_ USB or TRS channels _might_ have set themselves to "high resolution" mode, and you will likely want to disable this.
+>
+> This arises because the config is derived from previously unused areas of memory, which may lead to confusion.
+>
+> If you are installing 3.1.0 onto a _fresh_ RP2040, the default settings should avoid this; it's only an issue when upgrading firmware.
+>
+> In general, you should always head to the editor to _check_ your configuration after a firmware upgrade.
+
 ## Requirements
 
 - `pico-sdk` 1.5.0+ somewhere on your path, with the `PIDO_SDK` environment variable pointing at it
