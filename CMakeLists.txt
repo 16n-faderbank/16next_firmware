@@ -10,6 +10,12 @@ set(PICO_BOARD_HEADER_DIRS ${CMAKE_SOURCE_DIR}/board)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+
+# Uncomment if you're planning to use debugger
+# set(CMAKE_BUILD_TYPE "Debug")
+
+# Uncomment if you'd like to avoid optimizing out variables.
+# set(PICO_DEOPTIMIZED_DEBUG 1)
 pico_sdk_init()
 
 add_executable(${target_proj}
