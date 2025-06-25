@@ -18,10 +18,10 @@ bool txoPresent             = false;
 // enumerate over all things on i2c bus. If they respond, set a flag
 void scanI2Cbus() {
   int ret;
-  uint8_t rxdata;
+  uint8_t txdata = 0x00;
 
   for (uint8_t addr = 8; addr < 120; addr++) {
-    ret = i2c_read_blocking(i2c1, addr, &rxdata, 1, false);
+    ret = i2c_write_timeout_us(i2c1, addr, &txdata, 1, false, 100);
 
     if (ret >= 0) {
       if (addr == ansibleI2Caddress) {
@@ -35,7 +35,6 @@ void scanI2Cbus() {
       if (addr == er301I2Caddress) {
         er301Present = true;
       }
-      sleep_ms(1); // maybe unneeded?
     }
   }
 }
