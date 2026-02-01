@@ -11,6 +11,9 @@ A firmware for next-gen 16n devices, such as 16nx.
 
 It is edited and managed via a [web-based editor][editor].
 
+> [!NOTE]
+> The best way to get firmware for your 16nx or compatible device is [as a pre-compiled binary from the downloadable Releases](https://github.com/16n-faderbank/16next_firmware/releases). Compiling your own firmware is only recommend if you wish to hack/modify/extend the existing firmware.
+
 ## Firmware Version
 
 3.1.1
@@ -23,6 +26,7 @@ The firmware is written for the Raspberry Pi RP2040 chip; the 16nx board itself 
 
 It's coded in Pico SDK (raw C++); it does _not_ use Arduino (unlike the previous firmware). This is largely owing to when it was begun, and the state of the Arduino core - and also the author's preference for it.
 
+> [!WARNING]
 > **Important note on upgrading from < 3.1.0 to 3.1.0+**
 >
 > If you are upgrading from a device that has already had a pre-3.1.0 firmware installed on it, you will **need** to head to the [editor][editor] immediately and edit your configuration; _some_ USB or TRS channels _might_ have set themselves to "high resolution" mode, and you will likely want to disable this.
@@ -57,9 +61,9 @@ Or, from the command line, configure:
     cd build
     cmake ..
 
-and then, from that directory:
+and then, from the root of the project directory (one up from `build/`)
 
-    make 16next
+    cmake --build build --config Release --target 16next
 
 This will produce the file `./build/16next.uf2` which can be flashed to your 16nx board.
 
