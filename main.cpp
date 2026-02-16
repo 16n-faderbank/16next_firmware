@@ -342,7 +342,7 @@ void updateControls(bool force) {
           midi_uart_write_tx_buffer(midi_uart_instance, trs_msbCCData, 3);
           midi_uart_write_tx_buffer(midi_uart_instance, trs_lsbCCData, 3);
         } else {
-          uint8_t ccData[3] = {(uint8_t)(0xB0 | controller.usbMidiChannels[controllerIndex] - 1), controller.usbCCs[controllerIndex],
+          uint8_t ccData[3] = {(uint8_t)(0xB0 | controller.trsMidiChannels[controllerIndex] - 1), controller.trsCCs[controllerIndex],
                                trsOutputValue};
           midi_uart_write_tx_buffer(midi_uart_instance, ccData, 3);
         }
